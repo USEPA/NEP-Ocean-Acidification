@@ -116,8 +116,9 @@ qaqc_nep = function(df, columns_to_qa) {
 }
 
 cols_to_qa = c('ph','temp.c','sal.ppt','do.mgl')
-df3 = qaqc_nep(df2, cols_to_qa)
+df3 = qaqc_nep(df2, cols_to_qa) # test run
 
 #### Testing ground: ####
+
 site_list = df2 |> 
   group_split(site.code)
