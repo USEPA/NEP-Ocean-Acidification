@@ -334,18 +334,6 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
 #    2 = Suspect
 #    3 = Fail
 # ___________________________________________________
-#####
-  ## DEBUG: Re-doing 'season' for climatology issue (many non-run rows due to NA in season column)
-  # data_list$Barnegat = data_list$Barnegat |> 
-  #   mutate(month = month(datetime.utc)) |>  # defining 'month' column (num 1-12)
-  #   mutate(season2 = case_when(             # definint 'season2' column (DJF, MAM, etc)
-  #     month %in% c(12, 1, 2) ~ 'DJF',
-  #     datetime.utc %in% c(3, 4, 5) ~ 'MAM',
-  #     datetime.utc %in% c(6, 7, 8) ~ 'JJA',
-  #     datetime.utc %in% c(9, 10, 11) ~ 'SON',
-  #     TRUE ~ NA_character_ # in case of missing values
-  #   ))
-  # _____________________
   site_list = data |> 
     group_split(site.code)
   results_list = list()
