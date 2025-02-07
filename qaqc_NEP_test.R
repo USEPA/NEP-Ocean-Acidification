@@ -105,7 +105,7 @@ seasonal_thresholds_df = bind_rows(
 )
 
 # For Rate-of-Change Test:
-num_sd_for_rate_of_change = 3 
+num_sd_for_rate_change = 3 
 time_window = 24*60*60  # (default = 24-hours in seconds)
 min_num_pts_rate_of_change = 3
 sample_interval = 15 # minutes
@@ -268,6 +268,45 @@ calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_
   }
   return(data_interp)
 }
+# Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
+rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change) {
+  # Figuring out how to get this to work:
+  data = data |>
+    for (var in vars_to_test) {
+      mutate(!!paste0('sd_',var) = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)])
+    }
+  
+  # This loop might work for testing?
+  data = data |> 
+    mutate(across(all_of(vars_to_test), ~ case_when(
+      is.na(.x) | is.na(lag(.x)) ~ 0.5, # Insufficient data
+      abs(.x - lag(.x)) > min_num_pts_rate_of_change * data[[paste0('sd_',cur_column())]] ~ 2, # Suspect
+      TRUE ~ 1 # Pass
+    ), .names = 'test.RateChange_{.col}'))
+  return(data)
+}
+
+# THIS WORKS: Matches sd_var row from data_interp to site_data based on datetime.utc. Right half useful for pulling the SD value in question
+site_data$sd_ph_test = data_interp$sd_ph[match(site_data$datetime.utc,data_interp$datetime.utc)]
+site_data = site_data |> 
+  for (var in vars_to_test) {
+    mutate(!!paste0('sd_',var) = data_interp[[paste0('sd_',var)]][match(site_data$datetime.utc,data_interp$datetime.utc)])
+}
+
+# Test loop for matching 
+test_list = list()
+for (i in 1:10) {
+  site_data = site_data |> 
+    mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.RateChange_{.col}')) |> 
+    mutate(across(all_of(vars_to_test), ~ case_when(
+      
+    ), .names = 'test.RateChange_{.col}'))
+  for (var in vars_to_test) {
+    site_data = site_data |> 
+      mutate(paste0(var,'_sd_test')) = data_interp[[paste0('sd_',var)]][match(site_data$datetime.utc[site_data$datetime.utc %in% data_interp$datetime.utc], data_interp$datetime.utc)]
+  }
+}
+
 
 
 # makes the columns correctly, but doesn't fill the values (all NA)
