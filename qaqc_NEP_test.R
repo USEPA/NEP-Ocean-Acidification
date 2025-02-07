@@ -269,20 +269,40 @@ calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_
   return(data_interp)
 }
 # Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
-rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change) {
-  # Figuring out how to get this to work:
-  data = data |>
-    for (var in vars_to_test) {
-      mutate(!!paste0('sd_',var) = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)])
-    }
-  
-  # This loop might work for testing?
+rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change = 3) {
+  # initialize test columns with 0
   data = data |> 
-    mutate(across(all_of(vars_to_test), ~ case_when(
-      is.na(.x) | is.na(lag(.x)) ~ 0.5, # Insufficient data
-      abs(.x - lag(.x)) > min_num_pts_rate_of_change * data[[paste0('sd_',cur_column())]] ~ 2, # Suspect
-      TRUE ~ 1 # Pass
-    ), .names = 'test.RateChange_{.col}'))
+    mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.RateChange_{.col}'))
+  for (var in vars_to_test) {
+    # dynamically match rolling SD values from data_interp:
+    matched_sd_values = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)]
+    # apply rate of change test:
+    data = data |> 
+      mutate(!!paste0('test.RateChange_',var) := case_when(
+        is.na(get(var)) | is.na(lag(get(var))) ~ 0.5, # Insufficient data
+        is.na(matched_sd_values) ~ 0, # Test not run
+        abs(get(var) - lag(get(var))) > num_sd_for_rate_change*matched_sd_values ~ 2, # Suspect
+        TRUE ~ 1 # Pass
+      ))
+  }
+  # Create overall test.RateChange column
+  data = data |> 
+    mutate(test.RateChange = do.call(pmax, c(select(data, starts_with('test.RateChange_')), na.rm=TRUE)))
+  return(data)
+  
+  # # Figuring out how to get this to work:
+  # data = data |>
+  #   for (var in vars_to_test) {
+  #     mutate(!!paste0('sd_',var) = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)])
+  #   }
+  # 
+  # # This loop might work for testing?
+  # data = data |> 
+  #   mutate(across(all_of(vars_to_test), ~ case_when(
+  #     is.na(.x) | is.na(lag(.x)) ~ 0.5, # Insufficient data
+  #     abs(.x - lag(.x)) > min_num_pts_rate_of_change * data[[paste0('sd_',cur_column())]] ~ 2, # Suspect
+  #     TRUE ~ 1 # Pass
+  #   ), .names = 'test.RateChange_{.col}'))
   return(data)
 }
 
@@ -387,8 +407,7 @@ for (i in seq_along(site_list)) {
   # rate of change:
   site_data_interp = interpolate_data(site_data, cols_to_qa, time_interval=15) # interpolate missing timestamps and values per site
   data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
-  # expanded_data = calc_rolling_sd(expanded_data, cols_to_qa, sampling_window)
-  # site_data = ratechange_test(site_data, expanded_data, cols_to_qa)
+  site_data = rate_change_test(site_data, data_interp, cols_to_qa)
 
   
 

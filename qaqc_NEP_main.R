@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 6, 2025
+# Last updated: Feb 5, 2025
 
 library(tidyverse)
 library(dplyr)
@@ -269,8 +269,26 @@ calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_
   return(data_interp)
 }
 # Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
-rate_change_test = function(data, data_interp, vars_to_test) {
-  
+rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change = 3) {
+  # initialize test columns with 0
+  data = data |> 
+    mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.RateChange_{.col}'))
+  for (var in vars_to_test) {
+    # dynamically match rolling SD values from data_interp:
+    matched_sd_values = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)]
+    # apply rate of change test:
+    data = data |> 
+      mutate(!!paste0('test.RateChange_',var) := case_when(
+        is.na(get(var)) | is.na(lag(get(var))) ~ 0.5, # Insufficient data
+        is.na(matched_sd_values) ~ 0, # Test not run
+        abs(get(var) - lag(get(var))) > num_sd_for_rate_change*matched_sd_values ~ 2, # Suspect
+        TRUE ~ 1 # Pass
+      ))
+  }
+  # Create overall test.RateChange column
+  data = data |> 
+    mutate(test.RateChange = do.call(pmax, c(select(data, starts_with('test.RateChange_')), na.rm=TRUE)))
+  return(data)
 }
 
   
@@ -293,16 +311,15 @@ for (i in seq_along(site_list)) {
   site_data = site_data |> 
     arrange(datetime.utc)
   # Run QA tests
-  # site_data = gross_range_test(site_data, cols_to_qa, user_thresholds, sensor_thresholds)
-  # site_data = spike_test(site_data, cols_to_qa, spike_thresholds)
-  # site_data = flatline_test(site_data, cols_to_qa)
-  # site_data = climatology_test(site_data, cols_to_qa, seasonal_thresholds)
-  
+  site_data = gross_range_test(site_data, cols_to_qa, user_thresholds, sensor_thresholds)
+  site_data = spike_test(site_data, cols_to_qa, spike_thresholds)
+  site_data = flatline_test(site_data, cols_to_qa)
+  site_data = climatology_test(site_data, cols_to_qa, seasonal_thresholds)
+
   # rate of change:
   site_data_interp = interpolate_data(site_data, vars_to_test, time_interval=15) # interpolate missing timestamps and values per site
   data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
-  # expanded_data = calc_rolling_sd(expanded_data, cols_to_qa, sampling_window)
-  # site_data = ratechange_test(site_data, expanded_data, cols_to_qa)
+  site_data = rate_change_test(site_data, data_interp, cols_to_qa)
 
   
 
