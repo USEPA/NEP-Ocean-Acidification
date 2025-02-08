@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 5, 2025
+# Last updated: Feb 7, 2025
 
 library(tidyverse)
 library(dplyr)
@@ -102,6 +102,14 @@ seasonal_thresholds_df = bind_rows(
         min = seasonal_thresholds[[var]][[season]]$min,
         max = seasonal_thresholds[[var]][[season]]$max
       )}))})
+)
+
+attenuated_signal_thresholds = list(
+  ph = list(min_fail = 0.02, min_sus = 0.05),
+  temp.c = list(min_fail = 0.1, min_sus = 0.2),
+  sal.ppt = list(min_fail = 0.2, min_sus = 0.5),
+  do.mgl = list(min_fail = 0.1, min_sus = 0.3),
+  co2.ppm = list(min_fail = 1, min_sus = 2)
 )
 
 # For Rate-of-Change Test:
@@ -229,7 +237,7 @@ climatology_test = function(site_data, vars_to_test, seasonal_thresholds) {
   return(finished_data)
 }
 # RATE OF CHANGE TEST: 3 functions #
-# Function 1: interpolating data (into new data frame) to account for any missing timestamps - empty data is NA
+# Rate Change Function 1: interpolating data (into new data frame) to account for any missing timestamps - empty data is NA
 interpolate_data = function(data, vars_to_test, time_interval) {
   # ensure datetime.utc is in POSIXct format
   sorted_data = data |> 
@@ -249,7 +257,7 @@ interpolate_data = function(data, vars_to_test, time_interval) {
   }
   return(data_interp)
 }
-# Function 2: calculate rolling standard deviation and add to main data frame
+# Rate Change Function 2: calculate rolling standard deviation and add to main data frame
 calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_na = 20) {
   sampling_window = (60/time_interval)*24 # 96 for 15-min data
   for (var in vars_to_test) {
@@ -268,7 +276,7 @@ calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_
   }
   return(data_interp)
 }
-# Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
+# Rate Change Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
 rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change = 3) {
   # initialize test columns with 0
   data = data |> 
@@ -289,82 +297,38 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
   data = data |> 
     mutate(test.RateChange = do.call(pmax, c(select(data, starts_with('test.RateChange_')), na.rm=TRUE)))
   return(data)
-  
-  # # Figuring out how to get this to work:
-  # data = data |>
-  #   for (var in vars_to_test) {
-  #     mutate(!!paste0('sd_',var) = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)])
-  #   }
-  # 
-  # # This loop might work for testing?
-  # data = data |> 
-  #   mutate(across(all_of(vars_to_test), ~ case_when(
-  #     is.na(.x) | is.na(lag(.x)) ~ 0.5, # Insufficient data
-  #     abs(.x - lag(.x)) > min_num_pts_rate_of_change * data[[paste0('sd_',cur_column())]] ~ 2, # Suspect
-  #     TRUE ~ 1 # Pass
-  #   ), .names = 'test.RateChange_{.col}'))
-  return(data)
 }
-
-# THIS WORKS: Matches sd_var row from data_interp to site_data based on datetime.utc. Right half useful for pulling the SD value in question
-site_data$sd_ph_test = data_interp$sd_ph[match(site_data$datetime.utc,data_interp$datetime.utc)]
-site_data = site_data |> 
+# ATTENUATED SIGNAL TEST #
+attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, test_time, time_interval = 15) {
+  num_rows = (test_time * 60 / time_interval)
+  # initialize test columns with 0 (test not run)
+  data = data |> 
+    mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.AttenuatedSignal_{.col}'))
   for (var in vars_to_test) {
-    mutate(!!paste0('sd_',var) = data_interp[[paste0('sd_',var)]][match(site_data$datetime.utc,data_interp$datetime.utc)])
-}
-
-# Test loop for matching 
-test_list = list()
-for (i in 1:10) {
-  site_data = site_data |> 
-    mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.RateChange_{.col}')) |> 
-    mutate(across(all_of(vars_to_test), ~ case_when(
-      
-    ), .names = 'test.RateChange_{.col}'))
-  for (var in vars_to_test) {
-    site_data = site_data |> 
-      mutate(paste0(var,'_sd_test')) = data_interp[[paste0('sd_',var)]][match(site_data$datetime.utc[site_data$datetime.utc %in% data_interp$datetime.utc], data_interp$datetime.utc)]
-  }
-}
-
-
-
-# makes the columns correctly, but doesn't fill the values (all NA)
-data_interp = data_interp |> 
-  mutate(across(all_of(vars_to_test), ~ case_when(
-    
-  ), ))
-
-
-rate_change_test = function(data, expanded_data, vars_to_test, threshold_factor = 3) {
-  for (var in vars_to_test) {
+    fail_threshold = attenuated_signal_thresholds[[var]]$min_fail
+    suspect_threshold = attenuated_signal_thresholds[[var]]$min_sus
+    # compute rolling max-min difference over test_time window:
+    data_interp = data_interp |> 
+      mutate(!!paste0(var,'_max') := zoo:rollapply(get(var), width = num_rows, FUN = max, fill = NA, align = 'right', na.rm=TRUE),
+             !!paste0(var,'_min') := zoo:rollapply(get(var), width = num_rows, FUN = min, fill = NA, align = 'right', na.rm=TRUE))
+    # match min and max values from data_interp to data based on datetime.utc
+    max_col_values = data_interp[[paste0(var,'_max')]][match(data$datetime.utc, data_interp$datetime.utc)]
+    min_col_values = data_interp[[paste0(var,'_min')]][match(data$datetime.utc, data_interp$datetime.utc)]
+    # compute attenuated signal test
     data = data |> 
-      left_join(expanded_data |> 
-                  select(datetime.utc_interp,
-                         !!paste0(var,'_rolling_sd')),
-                by = c('datetime.utc' = 'datetime.utc_interp')) |> 
-      mutate(!!paste0('test.RateChnage_',var) := case_when(
-        is.na(get(var)) | is.na(lag(get(var))) ~ 0.5, # Insufficient data
-        is.na(get(paste0(var,'_rolling_sd'))) ~ 0, # Test not ran (NA)
-        abs(get(var) - lag(get(var))) > threshold_factor*get(paste0(var,'_rolling_sd')) ~ 2, # Suspect
+      mutate(!!paste0('test.AttenuatedSignal_',var) := case_when(
+        is.na(get(var)) ~ 0, # test not run
+        (max_col_values - min_col_values) < fail_threshold ~ 3, # Fail
+        (max_col_values - min_col_values) < suspect_threshold ~ 2, # Suspect
         TRUE ~ 1 # Pass
       ))
   }
+  # Compute overall test.AttenuatedSignal column
+  data = data |> 
+    mutate(test.AttenuatedSignal = do.call(pmax, c(select(data, starts_with('test.AttenuatedSignal_')), na.rm=TRUE)))
   return(data)
 }
 
-rollingSD = function(interp_data, vars_to_test, sampling_window) {
-  for (var in vars_to_test) {
-    if (is.numeric(interp_data[[var]]) && length(interpolate_data[[var]]) >= sampling_window) {
-      
-    }
-  }
-}
-
-
-ratechange_test = function() {
-  
-}
 ### RUNNING ALL TESTS WITHIN THIS LOOP:####
 #### Seasonal Debug ####
 # setDT(data_list$Barnegat)
@@ -408,7 +372,8 @@ for (i in seq_along(site_list)) {
   site_data_interp = interpolate_data(site_data, cols_to_qa, time_interval=15) # interpolate missing timestamps and values per site
   data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
   site_data = rate_change_test(site_data, data_interp, cols_to_qa)
-
+  
+  site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, 12, time_interval = 15)
   
 
   
