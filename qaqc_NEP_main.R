@@ -3,6 +3,19 @@
 # Originally created: Jan 23, 2025
 # Last updated: Feb 12, 2025
 
+# ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#                    INSTRUCTIONS: 
+#                    ------------
+#  1. Load in necessary functions
+#  2. Load in data
+#  3. Determine parameterization unique to each NEP 
+#      -> note that these must be RE-ENTERED for any subsequent NEPs. 
+#       -> Ensure the parameters are correct prior to running the QA script on a different NEP.
+#  4. Run QA script 'qaqc_nep()' on NEP dataset
+# 
+# ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+# 1. Load in necessary functions
 library(tidyverse)
 library(dplyr)
 library(slider)
@@ -10,7 +23,7 @@ library(purrr)
 library(fuzzyjoin)
 library(zoo)
 
-# Load in data
+#### 2. Load in data
 data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/Finalized Data from NEPs/Continuous'
 setwd(data_path)
 # this loads in 2 data frames: data_list (all data) and filtered_data_list (data filtered after QA process)
@@ -18,7 +31,7 @@ load('NEP_data.Rdata')
 # -- data_list - a list of data frames for each NEP, with harmonized column names
 # -- filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
 
-##### PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
+##### 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
 # For Gross-Range Test:
 ph_user_min = 6
 ph_user_max = 9
@@ -394,7 +407,8 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
   return(bind_rows(results_list))
 }
 
-#### Run for each NEP: ####
+#### Step 4. Run for each NEP: ####
+# REMEMBER: re-assign parameters (thresholds, time intervals, etc.) when starting a new NEP. 
 
 # Barnegat
 barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1) # filter co2 data out of Barnegat
