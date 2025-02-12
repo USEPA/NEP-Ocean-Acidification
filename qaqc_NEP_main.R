@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 7, 2025
+# Last updated: Feb 12, 2025
 
 library(tidyverse)
 library(dplyr)
@@ -9,6 +9,14 @@ library(slider)
 library(purrr)
 library(fuzzyjoin)
 library(zoo)
+
+# Load in data
+data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/Finalized Data from NEPs/Continuous'
+setwd(data_path)
+# this loads in 2 data frames: data_list (all data) and filtered_data_list (data filtered after QA process)
+load('NEP_data.Rdata') 
+# -- data_list - a list of data frames for each NEP, with harmonized column names
+# -- filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
 
 ##### PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
 # For Gross-Range Test:
@@ -67,21 +75,7 @@ spike_thresholds = list(
   do.mgl = list(low=spike_low_do, high=spike_high_do),
   co2.ppm = list(low=spike_low_co2, high=spike_high_co2)
 )
-
 seasonal_thresholds = list(
-  ph_min = list(Winter = 7.1, Spring = 7.2, Summer = 7.3, Autumn = 7.2),
-  ph_max = list(Winter = 8.0, Spring = 8.2, Summer = 8.3, Autumn = 8.2),
-  temp.c_min = list(Winter = 2, Spring = 10, Summer = 15, Autumn = 8),
-  temp.c_max = list(Winter = 12, Spring = 20, Summer = 25, Autumn = 18),
-  sal.ppt_min = list(Winter = 28, Spring = 29, Summer = 30, Autumn = 29),
-  sal.ppt_max = list(Winter = 34, Spring = 35, Summer = 36, Autumn = 34),
-  do.mgl_min = list(Winter = 6, Spring = 5.5, Summer = 5, Autumn = 5.5),
-  do.mgl_max = list(Winter = 12, Spring = 11, Summer = 10, Autumn = 11),
-  co2.ppm_min = list(Winter = 300, Spring = 300, Summer = 300, Autumn = 300),
-  co2.ppm_max = list(Winter = 1000, Spring = 1000, Summer = 1000, Autumn = 1000)
-)
-
-seasonal_thresholds2 = list(
   ph_min = list(DJF = 7.1, MAM = 7.2, JJA = 7.3, SON = 7.2),
   ph_max = list(DJF = 8.0, MAM = 8.2, JJA = 8.3, SON = 8.2),
   temp.c_min = list(DJF = 2, MAM = 10, JJA = 15, SON = 8),
@@ -92,16 +86,6 @@ seasonal_thresholds2 = list(
   do.mgl_max = list(DJF = 12, MAM = 11, JJA = 10, SON = 11),
   co2.ppm_min = list(DJF = 300, MAM = 300, JJA = 300, SON = 300),
   co2.ppm_max = list(DJF = 1000, MAM = 1000, JJA = 1000, SON = 1000)
-)
-seasonal_thresholds_df = bind_rows(
-  lapply(names(seasonal_thresholds), function(var) {
-    bind_rows(lapply(names(seasonal_thresholds[[var]]), function(season) {
-      tibble(
-        variable = var,
-        season = season,
-        min = seasonal_thresholds[[var]][[season]]$min,
-        max = seasonal_thresholds[[var]][[season]]$max
-      )}))})
 )
 
 # For Rate-of-Change Test:
@@ -117,8 +101,22 @@ num_flatline_fail = 3
 #
 # END PARAMETERIZATION #
 #_________________________________________________________________________________________
-
-##### Creating Separate Functions for each Test: ####
+######################           FUNCTIONS:           ###################################
+# Preliminary functions: ####
+# function to determine season:
+get_season = function(date) {
+  month = month(date)
+  if (month %in% c(12, 1, 2)) {
+    return('DJF')
+  } else if (month %in% c(3,4,5)) {
+    return('MAM')
+  } else if (month %in% c(6,7,8)) {
+    return('JJA')
+  } else if (month %in% c(9,10,11)) {
+    return('SON')
+  }
+}
+##### QA TEST FUNCTIONS: ####
 # GROSS RANGE TEST #
 gross_range_test = function(site_data, vars_to_test, user_thresholds, sensor_thresholds) {
   # Initialize test columns with 0 (test not ran)
@@ -182,7 +180,7 @@ flatline_test = function(site_data, vars_to_test) {
 # CLIMATOLOGY TEST #
 climatology_test = function(site_data, vars_to_test, seasonal_thresholds) {
   # Debug
-  if (!'season2' %in% names(site_data)) {
+  if (!'season' %in% names(site_data)) {
     stop('Error: there is no season column in the dataset')
   }
   # initialize test columns with 0 
@@ -290,49 +288,63 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
     mutate(test.RateChange = do.call(pmax, c(select(data, starts_with('test.RateChange_')), na.rm=TRUE)))
   return(data)
 }
-
-  
-### RUNNING ALL TESTS WITHIN THIS LOOP FOR TESTING:####
-barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1) # filter co2 data out of Barnegat
-vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
-time_interval = 15
-site_list = barnegat_filtered |> group_split(site.code) # split data into a list of dataframes for each site.code
-results_list = list()
-for (i in seq_along(site_list)) {
-  site_data = site_list[[i]]
-  # site_data = site_list[[1]]
-  site_code = unique(site_data$site.code)
-  cat('Processing site:',site_code,'\n')
-  # ensure POSIXct format for datetime.utc
-  if (is.character(data$datetime.utc)) {
-    site_data$datetime.utc = as.POSIXct(site_data$datetime.utc, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')
+# ATEENUATED SIGNAL TEST #
+attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, test_time, time_interval = 15) {
+  # define number of rows to assess min and max values across
+  num_rows = (test_time * 60 / time_interval)
+  # define safe_min and safe_max functions to calculate min and max values across num_rows without creating -Inf 
+  safe_max = function(x) if (all(is.na(x))) NA else max(x, na.rm=TRUE)
+  safe_min = function(x) if (all(is.na(x))) NA else min(x, na.rm=TRUE)
+  # initialize test columns with 0 (test not run)
+  data = data |> 
+    mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.AttenuatedSignal_{.col}'))
+  for (var in vars_to_test) {
+    fail_threshold = attenuated_signal_thresholds[[var]]$min_fail
+    suspect_threshold = attenuated_signal_thresholds[[var]]$min_sus
+    print(paste('Processing variable:',var))
+    # print(fail_threshold)
+    # print(suspect_threshold)
+    # debug: ensure there are valid values
+    if (all(is.na(data_interp[[var]]))) {
+      warning(paste('All values of',var,'are NA in data_interp. Skipping.'))
+      next # skip this variable if all values are NA
+    }
+    
+    # compute rolling max-min difference over test_time window:
+    data_interp = data_interp |> 
+      mutate(!!paste0(var,'_max') := rollapply(get(var), width=num_rows, FUN=safe_max, fill=NA, align='right'),
+             !!paste0(var,'_min') := rollapply(get(var), width=num_rows, FUN=safe_min, fill=NA, align='right'))
+    # mutate(!!paste0(var,'_max') := ifelse(
+    #         is.infinite(rollapply(get(var), width = num_rows, FUN = max, fill = NA, align = 'right', na.rm=TRUE)),
+    #         NA, rollapply(get(var), width = num_rows, FUN = max, fill = NA, align='right', na.rm=TRUE)
+    #         ),
+    #        !!paste0(var,'_min') := ifelse(
+    #          is.infinite(rollapply(get(var), width = num_rows, FUN = min, fill = NA, align = 'right', na.rm=TRUE)),
+    #          NA, rollapply(get(var), width = num_rows, FUN = min, fill = NA, align = 'right', na.rm=TRUE)
+    #        ))
+    # match min and max values from data_interp to data based on datetime.utc
+    max_col_values = data_interp[[paste0(var,'_max')]][match(data$datetime.utc, data_interp$datetime.utc)]
+    min_col_values = data_interp[[paste0(var,'_min')]][match(data$datetime.utc, data_interp$datetime.utc)]
+    # compute attenuated signal test
+    data = data |> 
+      mutate(!!paste0('test.AttenuatedSignal_',var) := case_when(
+        is.na(get(var)) ~ 0, # test not run
+        (max_col_values - min_col_values) < fail_threshold ~ 3, # Fail
+        (max_col_values - min_col_values) < suspect_threshold ~ 2, # Suspect
+        TRUE ~ 1 # Pass
+      ))
   }
-  # arrange data chronologically
-  site_data = site_data |> 
-    arrange(datetime.utc)
-  # Run QA tests
-  site_data = gross_range_test(site_data, cols_to_qa, user_thresholds, sensor_thresholds)
-  site_data = spike_test(site_data, cols_to_qa, spike_thresholds)
-  site_data = flatline_test(site_data, cols_to_qa)
-  site_data = climatology_test(site_data, cols_to_qa, seasonal_thresholds)
-
-  # rate of change:
-  site_data_interp = interpolate_data(site_data, vars_to_test, time_interval=15) # interpolate missing timestamps and values per site
-  data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
-  site_data = rate_change_test(site_data, data_interp, cols_to_qa)
-
-  
-
-  
-  # add each site_data to results_list
-  results_list[[i]] = site_data
+  # Compute overall test.AttenuatedSignal column
+  data = data |> 
+    mutate(test.AttenuatedSignal = do.call(pmax, c(select(data, starts_with('test.AttenuatedSignal_')), na.rm=TRUE)))
+  return(data)
 }
-df2_qa = bind_rows(results_list)
-View(df2_qa)
+
+
 # _________________________________________________________ #
 ### NEW QAQC Function (calls individual test functions)####
 # _________________________________________________________ #
-qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval) {
+qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval, attenuated_signal_thresholds) {
 # METADATA: ####
 # Applies QARTOD testing across a single data-frame, assuming all data within the data-frame corresponds to a single NEP
 # Assumed column names:
@@ -351,6 +363,9 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
 #    2 = Suspect
 #    3 = Fail
 # ___________________________________________________
+  if (is.character(data$datetime.utc)) {
+    data$datetime.utc = as.POSIXct(data$datetime.utc, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')
+  }
   site_list = data |> 
     group_split(site.code)
   results_list = list()
@@ -358,54 +373,43 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
     site_data = site_list[[i]]
     site_code = unique(site_data$site.code)
     cat('Processing site:',site_code,'\n')
-    # Run QA tests:
-    site_data = gross_range_test(site_data, columns_to_qa, user_thresholds, sensor_thresholds)
-    site_data = spike_test(site_data, columns_to_qa, spike_thresholds)
-    site_data = flatline_test(site_data, columns_to_qa)
-    site_data = climatology_test(site_data, columns_to_qa,seasonal_thresholds)
-    site_data_interp = interpolate_data(site_data, cols_to_qa, time_interval=15) # Ratechange 1 - interpolate missing timestamps and values per site
-    site_data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20) # Ratechange 2- calc rolling SD
-    # site_data = rate_change_test() # Ratechange 3 - perform rate of change test
-    # site_data = attenuated_signal_test()
+    ### Run QA tests ###
+    # gross range:
+    site_data = gross_range_test(site_data, vars_to_test, user_thresholds, sensor_thresholds)
+    # spike:
+    site_data = spike_test(site_data, vars_to_test, spike_thresholds)
+    # flat line:
+    site_data = flatline_test(site_data, vars_to_test)
+    # climatology:
+    site_data = climatology_test(site_data, vars_to_test, seasonal_thresholds)
+    # rate of change:
+    site_data_interp = interpolate_data(site_data, vars_to_test, time_interval=15) # interpolate missing timestamps and values per site
+    data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
+    site_data = rate_change_test(site_data, data_interp, vars_to_test)
+    # attenuated signal:
+    site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, 12)
     
     results_list[[i]] = site_data
   }
   return(bind_rows(results_list))
 }
 
-# Run for each individual NEP:
-qa_barnegat = qaqc_nep(data_list$Barnegat, cols_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15)
-qa_casco = qaqc_nep() #...
+#### Run for each NEP: ####
+
+# Barnegat
+barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1) # filter co2 data out of Barnegat
+vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
+qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
+# Casco
+vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
+qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
+# Long Island Sound
+
+# Pensacola
 
 
 
 #### ADDITIONAL FUNCTIONS No Longer In Use: ####
-# function to determine season:
-get_season = function(date) {
-  month = month(date)
-  if (month %in% c(12, 1, 2)) {
-    return('Winter')
-  } else if (month %in% c(3,4,5)) {
-    return('Spring')
-  } else if (month %in% c(6,7,8)) {
-    return('Summer')
-  } else if (month %in% c(9,10,11)) {
-    return('Autumn')
-  }
-}
-
-get_season2 = function(month) {
-  if (month == 12 | month == 1 | month == 2) {
-    return('DJF')
-  } else if (month == 3 | month == 4 | month == 5) {
-    return('MAM')
-  } else if (month == 6 | month == 7 | month == 8) {
-    return('JJA')
-  } else if (month == 9 | month == 10 | month == 11) {
-    return('SON')
-  }
-}
-
 # Function to create season column in dataset (uses 'get_season()' function above):
 make_season_column = function(dataset) {
   setDT(dataset)
