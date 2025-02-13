@@ -6,16 +6,17 @@
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS: 
 #                    ------------
-#  1. Load in necessary functions
+#  1. Load in necessary packages
 #  2. Load in data
 #  3. Determine parameterization unique to each NEP 
 #      -> note that these must be RE-ENTERED for any subsequent NEPs. 
 #       -> Ensure the parameters are correct prior to running the QA script on a different NEP.
-#  4. Run QA script 'qaqc_nep()' on NEP dataset
+#  4. Define necessary functions
+#  5. Run QA script 'qaqc_nep()' on NEP dataset
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# 1. Load in necessary functions
+#### Step 1. Load in necessary packages
 library(tidyverse)
 library(dplyr)
 library(slider)
@@ -23,7 +24,7 @@ library(purrr)
 library(fuzzyjoin)
 library(zoo)
 
-#### 2. Load in data
+#### Step 2. Load in data
 data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/Finalized Data from NEPs/Continuous'
 setwd(data_path)
 # this loads in 2 data frames: data_list (all data) and filtered_data_list (data filtered after QA process)
@@ -31,7 +32,7 @@ load('NEP_data.Rdata')
 # -- data_list - a list of data frames for each NEP, with harmonized column names
 # -- filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
 
-##### 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
+##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
 # For Gross-Range Test:
 ph_user_min = 6
 ph_user_max = 9
@@ -111,10 +112,16 @@ sample_interval = 15 # minutes
 num_flatline_sus = 2
 num_flatline_fail = 3
 # For Attenuated Signal Test:
-#
+attenuated_signal_thresholds = list(
+  ph = list(min_fail = 0.02, min_sus = 0.05),
+  temp.c = list(min_fail = 0.1, min_sus = 0.2),
+  sal.ppt = list(min_fail = 0.8, min_sus = 1.3),
+  do.mgl = list(min_fail = 0.1, min_sus = 0.3),
+  co2.ppm = list(min_fail = 1, min_sus = 2)
+)
 # END PARAMETERIZATION #
 #_________________________________________________________________________________________
-######################           FUNCTIONS:           ###################################
+# Step 4. Define necessary Functions:  ###################################
 # Preliminary functions: ####
 # function to determine season:
 get_season = function(date) {
@@ -407,7 +414,7 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
   return(bind_rows(results_list))
 }
 
-#### Step 4. Run for each NEP: ####
+#### Step 5. Run for each NEP: ####
 # REMEMBER: re-assign parameters (thresholds, time intervals, etc.) when starting a new NEP. 
 
 # Barnegat
