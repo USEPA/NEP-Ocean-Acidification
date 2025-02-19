@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 12, 2025
+# Last updated: Feb 18, 2025
 
 library(tidyverse)
 library(dplyr)
@@ -104,13 +104,7 @@ seasonal_thresholds_df = bind_rows(
       )}))})
 )
 
-attenuated_signal_thresholds = list(
-  ph = list(min_fail = 0.02, min_sus = 0.05),
-  temp.c = list(min_fail = 0.1, min_sus = 0.2),
-  sal.ppt = list(min_fail = 0.2, min_sus = 0.5),
-  do.mgl = list(min_fail = 0.1, min_sus = 0.3),
-  co2.ppm = list(min_fail = 1, min_sus = 2)
-)
+
 
 # For Rate-of-Change Test:
 num_sd_for_rate_change = 3 
@@ -122,7 +116,13 @@ sample_interval = 15 # minutes
 num_flatline_sus = 2
 num_flatline_fail = 3
 # For Attenuated Signal Test:
-#
+attenuated_signal_thresholds = list(
+  ph = list(min_fail = 0.02, min_sus = 0.05),
+  temp.c = list(min_fail = 0.1, min_sus = 0.2),
+  sal.ppt = list(min_fail = 0.2, min_sus = 0.5),
+  do.mgl = list(min_fail = 0.1, min_sus = 0.3),
+  co2.ppm = list(min_fail = 1, min_sus = 2)
+)
 # END PARAMETERIZATION #####
 #_________________________________________________________________________________________
 
@@ -365,8 +365,9 @@ site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenua
 ### RUNNING ALL TESTS WITHIN THIS LOOP:####
 barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1) # filter co2 data out of Barnegat
 data = barnegat_filtered
+data = data_list$Pensacola
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
-time_interval = 15
+time_interval = 10
 if (is.character(data$datetime.utc)) {
   data$datetime.utc = as.POSIXct(data$datetime.utc, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')
 }
@@ -407,8 +408,8 @@ for (i in seq_along(site_list)) {
   # climatology:
   site_data = climatology_test(site_data, vars_to_test, seasonal_thresholds)
   # rate of change:
-  site_data_interp = interpolate_data(site_data, vars_to_test, time_interval=15) # interpolate missing timestamps and values per site
-  data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
+  site_data_interp = interpolate_data(site_data, vars_to_test, time_interval=10) # interpolate missing timestamps and values per site
+  data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=10, min_non_na = 20)
   site_data = rate_change_test(site_data, data_interp, vars_to_test)
   # attenuated signal:
   site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, 12)

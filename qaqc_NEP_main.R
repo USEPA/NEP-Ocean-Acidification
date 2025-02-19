@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 12, 2025
+# Last updated: Feb 18, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS: 
@@ -29,8 +29,10 @@ data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidif
 setwd(data_path)
 # this loads in 2 data frames: data_list (all data) and filtered_data_list (data filtered after QA process)
 load('NEP_data.Rdata') 
-# -- data_list - a list of data frames for each NEP, with harmonized column names
-# -- filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
+# --> data_list - a list of data frames for each NEP, with harmonized column names
+# --> filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
+# SAVE R image with below line of code:
+# save.image('NEP_data.Rdata')
 
 ##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
 # For Gross-Range Test:
@@ -403,8 +405,8 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
     # climatology:
     site_data = climatology_test(site_data, vars_to_test, seasonal_thresholds)
     # rate of change:
-    site_data_interp = interpolate_data(site_data, vars_to_test, time_interval=15) # interpolate missing timestamps and values per site
-    data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval=15, min_non_na = 20)
+    site_data_interp = interpolate_data(site_data, vars_to_test, time_interval) # interpolate missing timestamps and values per site
+    data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval, min_non_na = 20)
     site_data = rate_change_test(site_data, data_interp, vars_to_test)
     # attenuated signal:
     site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, 12)
@@ -423,10 +425,11 @@ vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
 # Casco
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
-qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
+qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=60, attenuated_signal_thresholds)
 # Long Island Sound
-
+qa_longislandsound = qaqc_nep(data_list$LongIslandSound, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval = 5)
 # Pensacola
+qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=10, attenuated_signal_thresholds)
 
 
 
