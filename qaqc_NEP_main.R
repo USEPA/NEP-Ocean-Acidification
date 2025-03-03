@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 18, 2025
+# Last updated: Feb 27, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS: 
@@ -26,13 +26,15 @@ library(zoo)
 
 #### Step 2. Load in data
 data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/Finalized Data from NEPs/Continuous'
-setwd(data_path)
-# this loads in 2 data frames: data_list (all data) and filtered_data_list (data filtered after QA process)
-load('NEP_data.Rdata') 
-# --> data_list - a list of data frames for each NEP, with harmonized column names
-# --> filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
+
+setwd(data_path) # This requires access to the above O: drive (use VPN if not on-site)
+
+load('NEP_data.Rdata') # this loads in 2 data frames: 
+# --> 1. data_list - a list of data frames for each NEP, with harmonized column names
+# --> 2. qa_data_list - data_list, but with QA flags applied (from below process), no filtering of data
+# --> 3. filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
 # SAVE R image with below line of code:
-# save.image('NEP_data.Rdata')
+save(data_list, filtered_data_list, file='NEP_data.Rdata')
 
 ##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
 # For Gross-Range Test:
@@ -423,14 +425,42 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
 barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1) # filter co2 data out of Barnegat
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
-# Casco
+# Casco - do you have thresholds for Casco entered?
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=60, attenuated_signal_thresholds)
 # Long Island Sound
+lis_no_ctdeep = data_list$LongIslandSound |> 
+  filter(!grepl('^CTDEEP',site.code))
+
+lis_usgs = lis_no_ctdeep |> 
+  filter(!grepl('^IEC',site.code))
+
 qa_longislandsound = qaqc_nep(data_list$LongIslandSound, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval = 5)
-# Pensacola
+# Pensacola - do you have thresholds for Pensacola entered?
 qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=10, attenuated_signal_thresholds)
 
+# create qa_data_list and load in QA'd datasets into respective NEP data frames within qa_data_list:
+qa_data_list = data_list
+qa_data_list$Barnegat = qa_barnegat
+qa_data_list$Cascobay = qa_casco
+qa_data_list$LongIslandSound = qa_longislandsound
+qa_data_list$Pensacola = qa_pensacola
+
+#### Converting NBS-scale pH to Total-scale pH: ####
+
+convert_ph_NBS_to_Total = function(data) {
+  if (!'sensor.YSI' %in% names(data)) {
+    data = data |> 
+      mutate(ph_T = ph)
+  } else {
+    data = data |> 
+      mutate(ph_T = case_when(
+        sensor.YSI == 1 & !is.na(ph) & !is.na(sal.ppt) ~ ph + (sal.ppt*0.016/35),
+        TRUE ~ ph #
+      ))
+  }
+ return(data) 
+}
 
 
 #### ADDITIONAL FUNCTIONS No Longer In Use: ####
