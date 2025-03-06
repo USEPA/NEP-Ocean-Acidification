@@ -1,18 +1,13 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Feb 27, 2025
+# Last updated: Mar 5, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-#                    INSTRUCTIONS: 
-#                    ------------
-#  1. Load in necessary packages
-#  2. Load in data
-#  3. Determine parameterization unique to each NEP 
-#      -> note that these must be RE-ENTERED for any subsequent NEPs. 
-#       -> Ensure the parameters are correct prior to running the QA script on a different NEP.
-#  4. Define necessary functions
-#  5. Run QA script 'qaqc_nep()' on NEP dataset
+#                    This R script performs the following: 
+#                    -------------------------------------
+#  1. Loads in necessary packages
+#  2. Defines necessary functions for QA'ing data
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
@@ -24,108 +19,7 @@ library(purrr)
 library(fuzzyjoin)
 library(zoo)
 
-#### Step 2. Load in data
-data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/Finalized Data from NEPs/Continuous'
-
-setwd(data_path) # This requires access to the above O: drive (use VPN if not on-site)
-
-load('NEP_data.Rdata') # this loads in 2 data frames: 
-# --> 1. data_list - a list of data frames for each NEP, with harmonized column names
-# --> 2. qa_data_list - data_list, but with QA flags applied (from below process), no filtering of data
-# --> 3. filtered_data_list - data_list but filtered based on flags provided by NEPs or through our QA process here below
-# SAVE R image with below line of code:
-save(data_list, filtered_data_list, file='NEP_data.Rdata')
-
-##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: (with default values) ####
-# For Gross-Range Test:
-ph_user_min = 6
-ph_user_max = 9
-temp_user_min = -1
-temp_user_max = 35
-sal_user_min = 0
-sal_user_max = 35
-co2_user_min = 100
-co2_user_max = 2500
-do_user_min = 5
-do_user_max = 20
-# sensor min/max's
-ph_sensor_min = 0
-ph_sensor_max = 14
-temp_sensor_min = -10
-temp_sensor_max = 45
-sal_sensor_min = -1
-sal_sensor_max = 50
-co2_sensor_min = 0
-co2_sensor_max = 3500
-do_sensor_min = 0
-do_sensor_max = 25
-# for Spike Test:
-spike_low_ph = 0.3
-spike_high_ph = 0.5
-spike_low_temp = 3
-spike_high_temp = 5
-spike_low_sal = 2
-spike_high_sal = 4
-spike_low_do = 0.3
-spike_high_do = 0.5
-spike_low_co2 = 200
-spike_high_co2 = 400
-
-# Threshold lists - will need to customize these for each NEP
-user_thresholds = list(
-  ph = list(min=ph_user_min, max=ph_user_max),
-  temp.c = list(min=temp_user_min, max=temp_user_max),
-  sal.ppt = list(min=sal_user_min, max=sal_user_max),
-  do.mgl = list(min=do_user_min, max=do_user_max),
-  co2.ppm = list(min=co2_user_min, max=co2_user_max)
-)
-sensor_thresholds = list(
-  ph = list(min=ph_sensor_min, max=ph_sensor_max),
-  temp.c = list(min=temp_sensor_min, max=temp_sensor_max),
-  sal.ppt = list(min=sal_sensor_min, max=sal_sensor_max),
-  do.mgl = list(min=do_sensor_min, max=do_sensor_max),
-  co2.ppm = list(min=co2_sensor_min, max=co2_sensor_max)
-)
-spike_thresholds = list(
-  ph = list(low=spike_low_ph, high=spike_high_ph),
-  temp.c = list(low=spike_low_temp, high=spike_high_temp),
-  sal.ppt = list(low=spike_low_sal, high=spike_high_sal),
-  do.mgl = list(low=spike_low_do, high=spike_high_do),
-  co2.ppm = list(low=spike_low_co2, high=spike_high_co2)
-)
-seasonal_thresholds = list(
-  ph_min = list(DJF = 7.1, MAM = 7.2, JJA = 7.3, SON = 7.2),
-  ph_max = list(DJF = 8.0, MAM = 8.2, JJA = 8.3, SON = 8.2),
-  temp.c_min = list(DJF = 2, MAM = 10, JJA = 15, SON = 8),
-  temp.c_max = list(DJF = 12, MAM = 20, JJA = 25, SON = 18),
-  sal.ppt_min = list(DJF = 28, MAM = 29, JJA = 30, SON = 29),
-  sal.ppt_max = list(DJF = 34, MAM = 35, JJA = 36, SON = 34),
-  do.mgl_min = list(DJF = 6, MAM = 5.5, JJA = 5, SON = 5.5),
-  do.mgl_max = list(DJF = 12, MAM = 11, JJA = 10, SON = 11),
-  co2.ppm_min = list(DJF = 300, MAM = 300, JJA = 300, SON = 300),
-  co2.ppm_max = list(DJF = 1000, MAM = 1000, JJA = 1000, SON = 1000)
-)
-
-# For Rate-of-Change Test:
-num_sd_for_rate_of_change = 3 
-time_window = 24*60*60  # (default = 24-hours in seconds)
-min_num_pts_rate_of_change = 3
-sample_interval = 15 # minutes
-
-# For Flatline Test:
-num_flatline_sus = 2
-num_flatline_fail = 3
-# For Attenuated Signal Test:
-attenuated_signal_thresholds = list(
-  ph = list(min_fail = 0.02, min_sus = 0.05),
-  temp.c = list(min_fail = 0.1, min_sus = 0.2),
-  sal.ppt = list(min_fail = 0.8, min_sus = 1.3),
-  do.mgl = list(min_fail = 0.1, min_sus = 0.3),
-  co2.ppm = list(min_fail = 1, min_sus = 2)
-)
-# END PARAMETERIZATION #
-#_________________________________________________________________________________________
-# Step 4. Define necessary Functions:  ###################################
+# Step 2. Define necessary Functions:  ###################################
 # Preliminary functions: ####
 # function to determine season:
 get_season = function(date) {
@@ -418,58 +312,21 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
   return(bind_rows(results_list))
 }
 
-#### Step 5. Run for each NEP: ####
-# REMEMBER: re-assign parameters (thresholds, time intervals, etc.) when starting a new NEP. 
 
-# Barnegat
-barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1) # filter co2 data out of Barnegat
-vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
-qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
-# Casco - do you have thresholds for Casco entered?
-vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
-qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=60, attenuated_signal_thresholds)
-# Long Island Sound
-lis_no_ctdeep = data_list$LongIslandSound |> 
-  filter(!grepl('^CTDEEP',site.code))
-
-lis_usgs = lis_no_ctdeep |> 
-  filter(!grepl('^IEC',site.code))
-
-qa_longislandsound = qaqc_nep(data_list$LongIslandSound, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval = 5)
-# Pensacola - do you have thresholds for Pensacola entered?
-qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=10, attenuated_signal_thresholds)
-
-# create qa_data_list and load in QA'd datasets into respective NEP data frames within qa_data_list:
-qa_data_list = data_list
-qa_data_list$Barnegat = qa_barnegat
-qa_data_list$Cascobay = qa_casco
-qa_data_list$LongIslandSound = qa_longislandsound
-qa_data_list$Pensacola = qa_pensacola
-
+#### ADDITIONAL FUNCTIONS: ####
 #### Converting NBS-scale pH to Total-scale pH: ####
-
 convert_ph_NBS_to_Total = function(data) {
   if (!'sensor.YSI' %in% names(data)) {
     data = data |> 
-      mutate(ph_T = ph)
+      mutate(ph.T = ph)
   } else {
     data = data |> 
-      mutate(ph_T = case_when(
+      mutate(ph.T = case_when(
         sensor.YSI == 1 & !is.na(ph) & !is.na(sal.ppt) ~ ph + (sal.ppt*0.016/35),
         TRUE ~ ph #
       ))
   }
- return(data) 
-}
-
-
-#### ADDITIONAL FUNCTIONS No Longer In Use: ####
-# Function to create season column in dataset (uses 'get_season()' function above):
-make_season_column = function(dataset) {
-  setDT(dataset)
-  dataset[, season := sapply(datetime.utc,get_season)]
-  setDF(dataset)
-  return(dataset)
+  return(data) 
 }
 
 
