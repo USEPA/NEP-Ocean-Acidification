@@ -11,7 +11,8 @@ The purpose of this repository is to store shared R code for working with data f
  - qaqc_run_all.R
  - qaqc_NEP_Barnegat.R
  - qaqc_NEP_Casco.R
- - qaqc_NEP_Pensacola.R (and any corresponding additional NEP files to QA, but as of 3/6/2025, these are the only 3)
+ - qaqc_NEP_Pensacola.R
+ - (and any corresponding additional NEP files to QA, but as of 3/6/2025, these are the only 3)
 2. Then, the user must ensure that the thresholds for each NEP file are correct. (3/6/25 - they have not yet been adjusted)
 3. Once R is opened, the user must set their working directory to the filepath where the above R scripts were downloaded (NOT where the data is)
    - command: setwd(filepath) e.g. setwd("C:/Users/amandovi/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/R")
