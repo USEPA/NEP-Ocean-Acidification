@@ -116,18 +116,17 @@ vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=60, attenuated_signal_thresholds)
 #-------------
 #### Step 3: Saving Options ####
-qa_data_list$Cascobay = qa_casco
 
 save_all_option = 'n'
 dataframe_option = readline(prompt = 'Add QAd Casco Data to qa_data_list? (y/n): ')
 if (tolower(dataframe_option) %in% c('y','yes')) {
   qa_data_list$Cascobay = qa_casco
   cat('QAd Casco Data successfully saved to qa_data_list$Casco in current R Environment')
-  save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/) as .Rdata? (y/n): ')
+  save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 }
 
 if (tolower(save_all_option) %in% c('y','yes')) {
-  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/qa_data_list.Rdata'
+  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_data_list.Rdata'
   cat('Saving qa_data_list to:',save_path,'\n')
   save(qa_data_list, file = save_path)
   cat('qa_data_list saved successfully to O:drive')
@@ -135,7 +134,7 @@ if (tolower(save_all_option) %in% c('y','yes')) {
 
 save_nep_option = readline(prompt = 'Save QAd Casco Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/) as .Rdata? (y/n): ')
 if (tolower(save_nep_option) %in% c('y','yes')) {
-  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/qa_casco.Rdata'
+  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_casco.Rdata'
   cat('Saving qa_casco to:',save_path,'\n')
   save(qa_casco, file=save_path)
   cat('qa_casco saved successfully to O:drive')
@@ -145,7 +144,7 @@ if (tolower(save_nep_option) %in% c('y','yes')) {
 save_local_option = readline(prompt = 'Save QAd Casco Data to current directory? (y/n): ')
 if (tolower(save_local_option) %in% c('y','yes')) {
   save_path = getwd()
-  cat('Saving Casco data locally to current directory')
+  cat('Saving Casco data locally to current directory \n')
   save(qa_casco, file = paste0(getwd(),'/qa_casco.Rdata'))
   cat('qa_casco saved locally.')
 }

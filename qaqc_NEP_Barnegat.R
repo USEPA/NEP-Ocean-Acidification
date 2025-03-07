@@ -122,19 +122,19 @@ dataframe_option = readline(prompt = 'Add QAd Barnegat Data to qa_data_list? (y/
 if (tolower(dataframe_option) %in% c('y','yes')) {
   qa_data_list$Barnegat = qa_barnegat
   cat('QAd Barnegat Data successfully saved to qa_data_list$Barnegat in current R Environment')
-  save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/) as .Rdata? (y/n): ')
+  save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 }
 
 if (tolower(save_all_option) %in% c('y','yes')) {
-  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/qa_data_list.Rdata'
+  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_data_list.Rdata'
   cat('Saving qa_data_list to:',save_path,'\n')
   save(qa_data_list, file = save_path)
   cat('qa_data_list saved successfully to O:drive')
 } 
 
-save_nep_option = readline(prompt = 'Save QAd Barnegat Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/) as .Rdata? (y/n): ')
+save_nep_option = readline(prompt = 'Save QAd Barnegat Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 if (tolower(save_nep_option) %in% c('y','yes')) {
-  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/qa_barnegat.Rdata'
+  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_barnegat.Rdata'
   cat('Saving qa_barnegat to:',save_path,'\n')
   save(qa_barnegat, file=save_path)
   cat('qa_barnegat saved successfully to O:drive')
@@ -144,19 +144,19 @@ if (tolower(save_nep_option) %in% c('y','yes')) {
 save_local_option = readline(prompt = 'Save QAd Barnegat Data to current directory? (y/n): ')
 if (tolower(save_local_option) %in% c('y','yes')) {
   save_path = getwd()
-  cat('Saving Barnegat data locally to current directory')
+  cat('Saving Barnegat data locally to current directory \n')
   save(qa_barnegat, file = paste0(getwd(),'/qa_barnegat.Rdata'))
   cat('qa_barnegat saved locally.')
 }
 
 
-# Manual Entry below (COMMENT OUT): 
-# SAVE R image with below line of code:
-qa_data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/'
-# O:drive save:
-save(qa_data_list, file=paste0(qa_data_path,'NEP_qa_list.Rdata'))
-# Local save:
-save(qa_data_list, 'qa_data_list.Rdata')
+# # Manual Entry below (COMMENT OUT): 
+# # SAVE R image with below line of code:
+# qa_data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/'
+# # O:drive save:
+# save(qa_data_list, file=paste0(qa_data_path,'NEP_qa_list.Rdata'))
+# # Local save:
+# save(qa_data_list, 'qa_data_list.Rdata')
 
 
 

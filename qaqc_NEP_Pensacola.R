@@ -121,19 +121,19 @@ dataframe_option = readline(prompt = 'Add QAd Pensacola Data to qa_data_list? (y
 if (tolower(dataframe_option) %in% c('y','yes')) {
   qa_data_list$Pensacola = qa_pensacola
   cat('QAd Pensacola Data successfully saved to qa_data_list$Pensacola in current R Environment')
-  save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/) as .Rdata? (y/n): ')
+  save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 }
 
 if (tolower(save_all_option) %in% c('y','yes')) {
-  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/qa_data_list.Rdata'
+  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_data_list.Rdata'
   cat('Saving qa_data_list to:',save_path,'\n')
   save(qa_data_list, file = save_path)
   cat('qa_data_list saved successfully to O:drive')
 } 
 
-save_nep_option = readline(prompt = 'Save QAd Pensacola Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/) as .Rdata? (y/n): ')
+save_nep_option = readline(prompt = 'Save QAd Pensacola Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 if (tolower(save_nep_option) %in% c('y','yes')) {
-  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/qa_pensacola.Rdata'
+  save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_pensacola.Rdata'
   cat('Saving qa_pensacola to:',save_path,'\n')
   save(qa_pensacola, file=save_path)
   cat('qa_pensacola saved successfully to O:drive')
@@ -143,7 +143,7 @@ if (tolower(save_nep_option) %in% c('y','yes')) {
 save_local_option = readline(prompt = 'Save QAd Pensacola Data to current directory? (y/n): ')
 if (tolower(save_local_option) %in% c('y','yes')) {
   save_path = getwd()
-  cat('Saving Pensacola data locally to current directory')
+  cat('Saving Pensacola data locally to current directory \n')
   save(qa_pensacola, file = paste0(getwd(),'/qa_pensacola.Rdata'))
   cat('qa_pensacola saved locally.')
 }
