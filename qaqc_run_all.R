@@ -30,10 +30,10 @@
 #     b. Runs QA on specific NEPs 
 #     c. Prompts user for saving options
 
-#### Step 2. Load in data
-data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/'
-setwd(data_path)
-load(paste0(data_path,'data_list.Rdata'))
+# #### Step 2. Load in data
+# data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/'
+# # setwd(data_path)
+# load(paste0(data_path,'data_list.Rdata'))
 
 #### For TESTING: #############
 local_R_path = 'C:/Users/amandovi/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/R'
@@ -56,4 +56,4 @@ cat('Casco Bay QA process complete. \n')
 source('qaqc_NEP_Pensacola.R')
 cat('Pensacola Bay QA process complete. \n')
 
-cat('All QA Processes completed! ^_^ ')
+cat('*~*~* All QA Processes completed! ^_^ *~*~*')
