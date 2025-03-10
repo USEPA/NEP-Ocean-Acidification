@@ -23,7 +23,7 @@ III. Creating visualizations of data for communication and publication of result
 4. Finally, the user can execute all of the scripts by running the following line of code in the R console: **source('qaqc_run_all.R')**
    - note: this is different than running the entire script via ctrl-shift-enter. This allows the readline prompts to pull the user's saving preferences. 
 
-
+-----------------------------------------------------------------------------------
 File naming conventions:
 
 The **PREFIX** of a file dictates the file's category:
