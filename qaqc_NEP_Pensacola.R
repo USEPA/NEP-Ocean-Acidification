@@ -134,7 +134,7 @@ if (interactive()) {
     save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_pensacola.Rdata'
     cat('Saving qa_pensacola to:',save_path,'\n')
     save(qa_pensacola, file=save_path)
-    cat('qa_pensacola saved successfully to O:drive')
+    cat('qa_pensacola saved successfully to O:drive. \n')
   } else {
     cat('Skipped.')
   }
@@ -143,7 +143,7 @@ if (interactive()) {
     save_path = getwd()
     cat('Saving Pensacola data locally to current directory \n')
     save(qa_pensacola, file = paste0(getwd(),'/qa_pensacola.Rdata'))
-    cat('qa_pensacola saved locally.')
+    cat('qa_pensacola saved locally. \n')
   }
 } else {
   cat('Non-interactive mode detected. Skipping save. \n')

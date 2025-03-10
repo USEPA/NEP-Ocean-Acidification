@@ -136,7 +136,7 @@ if (interactive()) {
     save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_casco.Rdata'
     cat('Saving qa_casco to:',save_path,'\n')
     save(qa_casco, file=save_path)
-    cat('qa_casco saved successfully to O:drive')
+    cat('qa_casco saved successfully to O:drive \n')
   } else {
     cat('Skipped.')
   }
@@ -145,7 +145,7 @@ if (interactive()) {
     save_path = getwd()
     cat('Saving Casco data locally to current directory \n')
     save(qa_casco, file = paste0(getwd(),'/qa_casco.Rdata'))
-    cat('qa_casco saved locally.')
+    cat('qa_casco saved locally. \n')
   }
 } else {
   cat('Non-interactive mode detected. Skipping save. \n')
