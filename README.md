@@ -20,8 +20,10 @@ III. Creating visualizations of data for communication and publication of result
 2. Then, the user must ensure that the thresholds for each NEP file are correct. (3/6/25 - they have not yet been adjusted)
 3. Once R is opened, the user should open the **'qaqc_run_all.R'** script and customize row 39:
    - this is where the user sets their working directory to the local filepath where the R scripts were downloaded (NOT where the data is on the O:drive)
-4. Finally, the user can execute all of the scripts by running the following line of code in the R console: **source('qaqc_run_all.R')**
-   - note: this is different than running the entire script via ctrl-shift-enter. This allows the readline prompts to pull the user's saving preferences. 
+4. Finally, the user can execute all of the scripts by running either:
+   - Running the following line of code in the R console: **source('qaqc_run_all.R')**
+   - Or running the full qaqc_run_all.R script by pressing **ctrl-shift-enter**
+5. The user will be prompted on save preferences (local and O:drive) for the output dataframe .Rdata
 
 -----------------------------------------------------------------------------------
 File naming conventions:
