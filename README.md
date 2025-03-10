@@ -1,11 +1,11 @@
 # README
 
 The purpose of this repository is to store shared R code for working with data from National Estuary Program (NEP) monitoring sites to: 
-1. QA/QC-ing raw data for analysis
-2. Performing analysis on the data
-3. Creating visualizations of data for communication and publication of results
+I. QA/QC-ing raw data for analysis
+II. Performing analysis on the data
+III. Creating visualizations of data for communication and publication of results
 
-**1. QA/QC-ing raw data for analysis**, steps:
+**I. QA/QC-ing raw data for analysis**, steps:
 1. This requires the following files to be downloaded to your local machine:
  - qaqc_NEP_main.R
  - qaqc_run_all.R
