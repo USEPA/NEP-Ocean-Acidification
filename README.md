@@ -8,6 +8,7 @@ II. Performing analysis on the data
 
 III. Creating visualizations of data for communication and publication of results
 
+--------------------------------------------------------------------------------------
 **I. QA/QC-ing raw data for analysis**, steps:
 1. This requires the following files to be downloaded to your local machine:
  - qaqc_NEP_main.R
