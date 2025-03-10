@@ -12,7 +12,7 @@
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-cat('Processing location: Barnegat Bay...')
+cat('Processing location: Barnegat Bay \n')
 
 ##### Step 1. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
 
@@ -131,8 +131,8 @@ if (interactive()) {
   #   cat('qa_data_list saved successfully to O:drive')
   # } 
   
-  save_nep_option = readline(prompt = 'Save QAd Barnegat Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
-  if (tolower(save_nep_option) %in% c('y','yes')) {
+  # save_nep_option = readline(prompt = 'Save QAd Barnegat Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
+  if (tolower(save_Odrive_option) %in% c('y','yes')) {
     save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_barnegat.Rdata'
     cat('Saving qa_barnegat to:',save_path,'\n')
     save(qa_barnegat, file=save_path)
@@ -140,7 +140,7 @@ if (interactive()) {
   } else {
     cat('Skipped.')
   }
-  save_local_option = readline(prompt = 'Save QAd Barnegat Data to current directory? (y/n): ')
+  # save_local_option = readline(prompt = 'Save QAd Barnegat Data to current directory? (y/n): ')
   if (tolower(save_local_option) %in% c('y','yes')) {
     save_path = getwd()
     cat('Saving Barnegat data locally to current directory \n')

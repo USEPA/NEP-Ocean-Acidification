@@ -12,7 +12,7 @@
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-cat('Processing location: Pensacola Bay...')
+cat('Processing location: Pensacola Bay \n')
 
 ##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
 
@@ -129,8 +129,8 @@ if (interactive()) {
   #   cat('qa_data_list saved successfully to O:drive')
   # } 
   
-  save_nep_option = readline(prompt = 'Save QAd Pensacola Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
-  if (tolower(save_nep_option) %in% c('y','yes')) {
+  # save_nep_option = readline(prompt = 'Save QAd Pensacola Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
+  if (tolower(save_Odrive_option) %in% c('y','yes')) {
     save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_pensacola.Rdata'
     cat('Saving qa_pensacola to:',save_path,'\n')
     save(qa_pensacola, file=save_path)
@@ -138,7 +138,7 @@ if (interactive()) {
   } else {
     cat('Skipped.')
   }
-  save_local_option = readline(prompt = 'Save QAd Pensacola Data to current directory? (y/n): ')
+  # save_local_option = readline(prompt = 'Save QAd Pensacola Data to current directory? (y/n): ')
   if (tolower(save_local_option) %in% c('y','yes')) {
     save_path = getwd()
     cat('Saving Pensacola data locally to current directory \n')
