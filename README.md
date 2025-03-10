@@ -2,8 +2,7 @@
 
 The purpose of this repository is to store shared R code for working with data from National Estuary Program (NEP) monitoring sites to: 
 
-I. QA/QC-ing raw data for analysis
-
+I. QA/QC-ing raw data for analysis \n
 II. Performing analysis on the data
 
 III. Creating visualizations of data for communication and publication of results
