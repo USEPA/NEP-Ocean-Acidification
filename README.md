@@ -14,9 +14,10 @@ The purpose of this repository is to store shared R code for working with data f
  - qaqc_NEP_Pensacola.R
  - (and any corresponding additional NEP files to QA, but as of 3/6/2025, these are the only 3)
 2. Then, the user must ensure that the thresholds for each NEP file are correct. (3/6/25 - they have not yet been adjusted)
-3. Once R is opened, the user must set their working directory to the filepath where the above R scripts were downloaded (NOT where the data is)
-   - command: setwd(filepath) e.g. setwd("C:/Users/amandovi/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/R")
-4. Finally, the user may execute all of the scripts simply by running the **qaqc_run_all.R** script (CTRL+SHIFT+ENTER)
+3. Once R is opened, the user should open the **'qaqc_run_all.R'** script and customize row 39:
+   - this is where the user sets their working directory to the local filepath where the R scripts were downloaded (NOT where the data is on the O:drive)
+4. Finally, the user can execute all of the scripts by running the following line of code in the R console: **source('qaqc_run_all.R')**
+   - note: this is different than running the entire script via ctrl-shift-enter. This allows the readline prompts to pull the user's saving preferences. 
 
 
 File naming conventions:
