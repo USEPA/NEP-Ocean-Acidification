@@ -15,7 +15,7 @@
 # !   3a. Has had QA thresholds entered for that NEP (they may be dummy/old values)
 # !   3b. Has the DATE and NAME OF LAST UPDATE filled in for future users
 # ! (Note: User will be prompted on saving preferences prior to QA script running)
-# !!! --->>> TO RUN SCRIPT: after steps 1-3 above are complete, type in console: source('qaqc_run_all.R')
+# !
 # ---------------------------------------------------
 # This script:
 # 1. Loads in data defined by the below data_path
@@ -63,4 +63,4 @@ cat('Pensacola Bay QA process complete. \n')
 
 end_time = Sys.time()
 time_taken = end_time - start_time
-cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken/60,1),'min.')
+cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken,1),'min.')
