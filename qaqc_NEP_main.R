@@ -329,4 +329,4 @@ convert_ph_NBS_to_Total = function(data) {
   return(data) 
 }
 
-
+nep_qa_list = list()

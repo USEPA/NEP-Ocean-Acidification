@@ -151,4 +151,4 @@ if (interactive()) {
   cat('Non-interactive mode detected. Skipping save. \n')
 }
 
-
+nep_qa_list$Casco = qa_casco

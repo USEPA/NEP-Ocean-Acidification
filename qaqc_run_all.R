@@ -10,7 +10,7 @@
 # ! PRIOR TO RUNNING: The user must ensure that:
 # ! 1. All required files are downloaded and saved into the same local folder 
 # !   - Required files: this file (qaqc_run_all.R), qaqc_NEP_main.R, and every qaqc_NEP_xxx.R
-# ! 2. Have setwd(local_R_path) correctly entered below to said folder (lines 39-40)
+# ! 2. Have setwd(local_R_path) correctly assigned to local folder path (lines 39-40)
 # ! 3. Each qaqc_NEP_xxx.R file:
 # !   3a. Has had QA thresholds entered for that NEP (they may be dummy/old values)
 # !   3b. Has the DATE and NAME OF LAST UPDATE filled in for future users
@@ -29,7 +29,7 @@
 #     a. Enters user-defined thresholds for each NEP
 #     b. Runs QA on specific NEPs 
 # --------------------------------------------------
-
+start_time = Sys.time()
 cat('Beginning script... \n Loading data from O:drive...\n')
 # #### Load in data (data_list) a list of data frames for each NEP, with harmonized column names
 data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/'
@@ -46,7 +46,7 @@ save_local_option = readline(prompt='Save QAd NEP Data for each NEP locally (to 
 
 # Begin QA Process:
 cat('Starting QA Process... Loading main QA .R script... \n')
-start_time = Sys.time()
+# start_time = Sys.time()
 source('qaqc_NEP_main.R')
 
 #Barnegat:
@@ -63,4 +63,7 @@ cat('Pensacola Bay QA process complete. \n')
 
 end_time = Sys.time()
 time_taken = end_time - start_time
-cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken,1),'min.')
+cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken,1),'min. \n')
+
+cat('QAd datasets: ',names(nep_qa_list),'\n')
+cat('To view NEP data with QA flags, enter: View(nep_qa_list$NEPNAME) \n ... e.g. View(nep_qa_list$Barnegat) ... to view NEP data with QA flags')

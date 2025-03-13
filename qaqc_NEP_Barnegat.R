@@ -151,7 +151,7 @@ if (interactive()) {
   cat('Non-interactive mode detected. Skipping save. \n')
 }
 
-
+nep_qa_list$Barnegat = qa_barnegat
 
 
 # # Manual Entry below (COMMENT OUT): 
