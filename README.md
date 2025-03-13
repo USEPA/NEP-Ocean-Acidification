@@ -1,4 +1,4 @@
-# README
+# INSTRUCTIONS
 
 The purpose of this repository is to store shared R code for working with data from National Estuary Program (NEP) monitoring sites to: 
 
