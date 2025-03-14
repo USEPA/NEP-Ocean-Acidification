@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 13, 2025
+# Last updated: Mar 14, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -142,7 +142,7 @@ if (interactive()) {
   if (tolower(save_local_option) %in% c('y','yes')) {
     save_path = getwd()
     cat('Saving Pensacola data locally to current directory \n')
-    save(qa_pensacola, file = paste0(getwd(),'/qa_pensacola.Rdata'))
+    save(qa_pensacola, file = paste0(getwd(),'qa_pensacola.Rdata'))
     cat('qa_pensacola saved locally. \n')
   }
 } else {

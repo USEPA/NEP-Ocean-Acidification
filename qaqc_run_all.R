@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Mar 5, 2025
-# Last updated: Mar 13, 2025
+# Last updated: Mar 14, 2025
 # -------------------------------------------------------------------------------
 # From this script, the user may run the entire QA-QC process for each NEP included here which has a file within the same directory
 #
@@ -36,7 +36,7 @@ data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidif
 load(paste0(data_path,'data_list.Rdata'))
 #
 # Set local path to location of folder with saved scripts (including this one)
-local_R_path = 'C:/Users/amandovi/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/R'
+local_R_path = 'C:/Users/amandovi/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/R/'
 setwd(local_R_path)
 # # # # # # 
 

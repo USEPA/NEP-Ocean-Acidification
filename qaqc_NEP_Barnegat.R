@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 13, 2025
+# Last updated: Mar 14, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -112,6 +112,8 @@ barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1)
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 # RUN SCRIPT:
 qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
+
+
 #---------
 #### Step 3: Saving Options ####
 
@@ -144,7 +146,7 @@ if (interactive()) {
   if (tolower(save_local_option) %in% c('y','yes')) {
     save_path = getwd()
     cat('Saving Barnegat data locally to current directory \n')
-    save(qa_barnegat, file = paste0(getwd(),'/qa_barnegat.Rdata'))
+    save(qa_barnegat, file = paste0(getwd(),'qa_barnegat.Rdata'))
     cat('qa_barnegat saved locally. \n')
   }
 } else {

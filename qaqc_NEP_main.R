@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 13, 2025
+# Last updated: Mar 14, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    This R script performs the following: 
@@ -18,6 +18,7 @@ library(slider)
 library(purrr)
 library(fuzzyjoin)
 library(zoo)
+library(data.table)
 
 # Step 2. Define necessary Functions:  ###################################
 # Preliminary functions: ####
@@ -34,9 +35,22 @@ get_season = function(date) {
     return('SON')
   }
 }
+# Function to create season column in dataset (uses 'get_season()' function above):
+make_season_column = function(dataset) {
+  setDT(dataset)
+  dataset[, season := sapply(datetime.utc,get_season)]
+  setDF(dataset)
+  return(dataset)
+}
 ##### QA TEST FUNCTIONS: ####
 # GROSS RANGE TEST #
 gross_range_test = function(site_data, vars_to_test, user_thresholds, sensor_thresholds) {
+  # Tests NEP data for values outside of expected range
+  #  0 - Test not ran
+  #  1 - Pass
+  #  2 - Suspect - exceeds user thresholds (expected value)
+  #  3 - Fail - exceeds sensor thresholds (theoretical possible range)
+  # - - - - - - - - - - - - - - - - - -
   # Initialize test columns with 0 (test not ran)
   data = site_data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.GrossRange_{.col}')) # 0 = test not ran
@@ -55,6 +69,13 @@ gross_range_test = function(site_data, vars_to_test, user_thresholds, sensor_thr
 }
 # SPIKE TEST #
 spike_test = function(site_data, vars_to_test, spike_thresholds) {
+  # Tests NEP data for a value spike relative to previous measurement
+  #  0 - Test not ran
+  #  0.5 - Insufficient data - no previous value to compare current value against
+  #  1 - Pass
+  #  2 - Suspect - exceeds low threshold value (spike_low_var)
+  #  3 - Fail - exceeds high threshold value (spike_high_var)
+  # - - - - - - - - - - - - - - - - - -
   # initialize test columns with 0 (test not ran)
   data = site_data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.Spike_{.col}'))
@@ -74,6 +95,13 @@ spike_test = function(site_data, vars_to_test, spike_thresholds) {
 }
 # FLATLINE TEST #
 flatline_test = function(site_data, vars_to_test) {
+  # Tests NEP data for consecutive unchanging values
+  #  0 - Test not ran
+  #  0.5 - Insufficient data (not enough previous entries)
+  #  1 - Pass
+  #  2 - Suspect - 3 or 4 equal repeated values
+  #  3 - Fail - 5+ equal repeated values 
+  # - - - - - - - - - - - - - - - - - -
   SUS_NUM = 3
   FAIL_NUM = 5
   data = site_data |> 
@@ -97,6 +125,11 @@ flatline_test = function(site_data, vars_to_test) {
 }
 # CLIMATOLOGY TEST #
 climatology_test = function(site_data, vars_to_test, seasonal_thresholds) {
+  # Tests NEP data for seasonal-specific threshold exceedence
+  #  0 - Test not ran
+  #  1 - Pass
+  #  2 - Suspect - exceeded threshold
+  # - - - - - - - - - - - - - - - - - -
   # Debug
   if (!'season' %in% names(site_data)) {
     stop('Error: there is no season column in the dataset')
@@ -186,6 +219,12 @@ calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_
 }
 # Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
 rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change = 3) {
+  # Tests NEP data for a value spike relative to standard deviation of previous time period (24 hours)
+  #  0 - Test not ran
+  #  0.5 - Insufficient data to perform test
+  #  1 - Pass
+  #  2 - Suspect - spike exceeds standard deviation of previous window
+  # - - - - - - - - - - - - - - - - - -
   # initialize test columns with 0
   data = data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.RateChange_{.col}'))
@@ -206,8 +245,14 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
     mutate(test.RateChange = do.call(pmax, c(select(data, starts_with('test.RateChange_')), na.rm=TRUE)))
   return(data)
 }
-# ATEENUATED SIGNAL TEST #
+# ATTENUATED SIGNAL TEST #
 attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, test_time, time_interval = 15) {
+  # Tests NEP data for a near-flatline (change relative to a designated suspect and fail threshold ('attenuated_signal_thresholds'))
+  #  0 - Test not ran
+  #  1 - Pass - exceeds both suspect and fail thresholds for change
+  #  2 - Suspect - exceeds fail threshold but does not exceed suspect threshold
+  #  3 - Fail - does not exceed fail threshold
+  # - - - - - - - - - - - - - - - - - -
   # define number of rows to assess min and max values across
   num_rows = (test_time * 60 / time_interval)
   # define safe_min and safe_max functions to calculate min and max values across num_rows without creating -Inf 
