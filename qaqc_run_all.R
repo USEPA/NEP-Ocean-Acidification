@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Mar 5, 2025
-# Last updated: Apr 3, 2025
+# Last updated: Apr 4, 2025
 # -------------------------------------------------------------------------------
 # From this script, the user may run the entire QA-QC process for each NEP included here which has a file within the same directory
 #
@@ -67,3 +67,4 @@ cat('Pensacola Bay QA process complete. \n')
 end_time = Sys.time()
 time_taken = end_time - start_time
 cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken,1),'min. \n')
+cat('Your datasets: \n data_list_qa: the full dataset, post-QA performed here (includes all NEP data, e.g. data_list_qa$Barnegat or data_list_qa$Tillamook)  \n qa_barnegat, qa_casco, and qa_pensacola: the individual data.frames for the NEPs which underwent QA here ')

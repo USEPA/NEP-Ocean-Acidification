@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Apr 3, 2025
+# Last updated: Apr 4, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -42,14 +42,14 @@ co2_sensor_max = 3500
 do_sensor_min = 0
 do_sensor_max = 25
 # for Spike Test:
-spike_low_ph = 0.3
-spike_high_ph = 0.5
+spike_low_ph = 1
+spike_high_ph = 2
 spike_low_temp = 3
 spike_high_temp = 5
 spike_low_sal = 2
 spike_high_sal = 4
-spike_low_do = 0.3
-spike_high_do = 0.5
+spike_low_do = 5
+spike_high_do = 10
 spike_low_co2 = 200
 spike_high_co2 = 400
 # Seasonal thresholds for climatology test:
@@ -74,6 +74,8 @@ sample_interval = 15 # minutes
 num_flatline_sus = 2
 num_flatline_fail = 3
 # For Attenuated Signal Test:
+# these values dictate the exceedence thresholds to which the difference min(var) and max(var) over a given 12-hour period would FAIL or be SUSPECT if they do not exceed them 
+# similar to a flat-line test, it tests for near-flat-line scenarios, where a signal is overly dampened by an external factor
 attenuated_signal_thresholds = list(
   ph = list(min_fail = 0.02, min_sus = 0.05),
   temp.c = list(min_fail = 0.1, min_sus = 0.2),
