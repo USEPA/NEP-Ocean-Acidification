@@ -25,7 +25,7 @@ ph_user_max = 9
 temp_user_min = -1
 temp_user_max = 35
 sal_user_min = 0
-sal_user_max = 35
+sal_user_max = 36
 co2_user_min = 100
 co2_user_max = 2500
 do_user_min = 0
@@ -54,16 +54,16 @@ spike_low_co2 = 200
 spike_high_co2 = 400
 # Seasonal thresholds for climatology test:
 seasonal_thresholds = list(
-  ph_min = list(DJF = 7.1, MAM = 7.2, JJA = 7.3, SON = 7.2),
-  ph_max = list(DJF = 8.0, MAM = 8.2, JJA = 8.3, SON = 8.2),
-  temp.c_min = list(DJF = 2, MAM = 10, JJA = 15, SON = 8),
-  temp.c_max = list(DJF = 12, MAM = 20, JJA = 25, SON = 18),
-  sal.ppt_min = list(DJF = 28, MAM = 29, JJA = 30, SON = 29),
-  sal.ppt_max = list(DJF = 34, MAM = 35, JJA = 36, SON = 34),
-  do.mgl_min = list(DJF = 6, MAM = 5.5, JJA = 5, SON = 5.5),
-  do.mgl_max = list(DJF = 12, MAM = 11, JJA = 10, SON = 11),
-  co2.ppm_min = list(DJF = 300, MAM = 300, JJA = 300, SON = 300),
-  co2.ppm_max = list(DJF = 1000, MAM = 1000, JJA = 1000, SON = 1000)
+  ph_min = list(DJF = 6, MAM = 6, JJA = 6, SON = 6),
+  ph_max = list(DJF = 9, MAM = 9, JJA = 9, SON = 9),
+  temp.c_min = list(DJF = 0, MAM = 0, JJA = 0, SON = 0),
+  temp.c_max = list(DJF = 36, MAM = 36, JJA = 36, SON = 36),
+  sal.ppt_min = list(DJF = 0, MAM = 0, JJA = 0, SON = 0),
+  sal.ppt_max = list(DJF = 36, MAM = 36, JJA = 36, SON = 36),
+  do.mgl_min = list(DJF = 0, MAM = 0, JJA = 0, SON = 0),
+  do.mgl_max = list(DJF = 15, MAM = 15, JJA = 15, SON = 15),
+  co2.ppm_min = list(DJF = 100, MAM = 100, JJA = 100, SON = 100),
+  co2.ppm_max = list(DJF = 2000, MAM = 2000, JJA = 2000, SON = 2000)
 )
 # For Rate-of-Change Test:
 num_sd_for_rate_of_change = 3 
