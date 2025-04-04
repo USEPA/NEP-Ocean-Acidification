@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Mar 5, 2025
-# Last updated: Mar 14, 2025
+# Last updated: Apr 3, 2025
 # -------------------------------------------------------------------------------
 # From this script, the user may run the entire QA-QC process for each NEP included here which has a file within the same directory
 #
@@ -34,6 +34,7 @@ cat('Beginning script... \n Loading data from O:drive...\n')
 # #### Load in data (data_list) a list of data frames for each NEP, with harmonized column names
 data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/'
 load(paste0(data_path,'data_list.Rdata'))
+
 #
 # Set local path to location of folder with saved scripts (including this one)
 local_R_path = 'C:/Users/amandovi/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/R/'
@@ -43,6 +44,8 @@ setwd(local_R_path)
 # Prompts - determine saving locally / O:drive
 save_Odrive_option = readline(prompt='Save QAd NEP Data for each NEP to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 save_local_option = readline(prompt='Save QAd NEP Data for each NEP locally (to where you setwd() to in lines 39-40)? (y/n): ')
+
+data_list_qa = data_list
 
 # Begin QA Process:
 cat('Starting QA Process... Loading main QA .R script... \n')
@@ -64,6 +67,3 @@ cat('Pensacola Bay QA process complete. \n')
 end_time = Sys.time()
 time_taken = end_time - start_time
 cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken,1),'min. \n')
-
-cat('QAd datasets: ',names(nep_qa_list),'\n')
-cat('To view NEP data with QA flags, enter: View(nep_qa_list$NEPNAME) \n ... e.g. View(nep_qa_list$Barnegat) ... to view NEP data with QA flags')

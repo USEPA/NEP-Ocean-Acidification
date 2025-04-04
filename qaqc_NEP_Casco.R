@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 14, 2025
+# Last updated: Apr 3, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -12,7 +12,7 @@
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-cat('Processing location: Casco Bay \n')
+cat('Processing NEP: Casco Bay \n')
 
 ##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
 
@@ -77,7 +77,7 @@ num_flatline_fail = 3
 attenuated_signal_thresholds = list(
   ph = list(min_fail = 0.02, min_sus = 0.05),
   temp.c = list(min_fail = 0.1, min_sus = 0.2),
-  sal.ppt = list(min_fail = 0.8, min_sus = 1.3),
+  sal.ppt = list(min_fail = 0.1, min_sus = 0.3),
   do.mgl = list(min_fail = 0.1, min_sus = 0.3),
   co2.ppm = list(min_fail = 1, min_sus = 2)
 )
@@ -111,7 +111,7 @@ spike_thresholds = list(
 # Casco - do you have thresholds for Casco entered?
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 # RUN SCRIPT: 
-qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=60, attenuated_signal_thresholds)
+qa_casco = qaqc_nep(data_list$Cascobay, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=60, attenuated_signal_thresholds, num_sd_for_rate_of_change)
 #-------------
 #### Step 3: Saving Options ####
 
@@ -151,4 +151,4 @@ if (interactive()) {
   cat('Non-interactive mode detected. Skipping save. \n')
 }
 
-nep_qa_list$Casco = qa_casco
+data_list_qa$Casco = qa_casco

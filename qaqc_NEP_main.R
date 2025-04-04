@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 14, 2025
+# Last updated: Mar 27, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    This R script performs the following: 
@@ -102,8 +102,8 @@ flatline_test = function(site_data, vars_to_test) {
   #  2 - Suspect - 3 or 4 equal repeated values
   #  3 - Fail - 5+ equal repeated values 
   # - - - - - - - - - - - - - - - - - -
-  SUS_NUM = 3
-  FAIL_NUM = 5
+  SUS_NUM = 12
+  FAIL_NUM = 36
   data = site_data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.Flatline_{.col}'))
   # Apply test logic
@@ -114,7 +114,7 @@ flatline_test = function(site_data, vars_to_test) {
       case_when(
         row_number() < FAIL_NUM ~ 0.5, # Insufficient Data
         !is.na(.x) & run_lengths >= FAIL_NUM ~ 3, # FAIL
-        !is.na(.x) & run_lengths >= SUS_NUM ~ 2, # SUSEPCT
+        !is.na(.x) & run_lengths >= SUS_NUM ~ 2, # SUSPECT
         TRUE ~ 1                                # PASS
       )
     }, .names = 'test.Flatline_{.col}'))
@@ -307,7 +307,7 @@ attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_si
 # _________________________________________________________ #
 ### NEW QAQC Function (calls individual test functions)####
 # _________________________________________________________ #
-qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval, attenuated_signal_thresholds) {
+qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval, attenuated_signal_thresholds, num_sd_for_rate_change) {
 # METADATA: ####
 # Applies QARTOD testing across a single data-frame, assuming all data within the data-frame corresponds to a single NEP
 # Assumed column names:
@@ -348,7 +348,7 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
     # rate of change:
     site_data_interp = interpolate_data(site_data, vars_to_test, time_interval) # interpolate missing timestamps and values per site
     data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval, min_non_na = 20)
-    site_data = rate_change_test(site_data, data_interp, vars_to_test)
+    site_data = rate_change_test(site_data, data_interp, vars_to_test, num_sd_for_rate_change)
     # attenuated signal:
     site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, 12)
     

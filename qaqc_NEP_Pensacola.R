@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 14, 2025
+# Last updated: Apr 3, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -12,7 +12,7 @@
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-cat('Processing location: Pensacola Bay \n')
+cat('Processing NEP: Pensacola Bay \n')
 
 ##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
 
@@ -28,8 +28,8 @@ sal_user_min = 0
 sal_user_max = 35
 co2_user_min = 100
 co2_user_max = 2500
-do_user_min = 5
-do_user_max = 20
+do_user_min = 0
+do_user_max = 15
 # sensor min/max's
 ph_sensor_min = 0
 ph_sensor_max = 14
@@ -42,8 +42,8 @@ co2_sensor_max = 3500
 do_sensor_min = 0
 do_sensor_max = 25
 # for Spike Test:
-spike_low_ph = 0.3
-spike_high_ph = 0.5
+spike_low_ph = 0.5
+spike_high_ph = 1.0
 spike_low_temp = 3
 spike_high_temp = 5
 spike_low_sal = 2
@@ -103,6 +103,8 @@ spike_thresholds = list(
   do.mgl = list(low=spike_low_do, high=spike_high_do),
   co2.ppm = list(low=spike_low_co2, high=spike_high_co2)
 )
+# Rate Change test:
+num_sd_for_rate_of_change = 4
 # END PARAMETERIZATION #
 
 #### Step 2. Run QA Script: ####
@@ -110,7 +112,7 @@ spike_thresholds = list(
 # Pensacola - do you have thresholds for Pensacola entered?
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 # Run QA Script:
-qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=10, attenuated_signal_thresholds)
+qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=10, attenuated_signal_thresholds, num_sd_for_rate_of_change)
 
 #### Step 3: Saving Options ####
 if (interactive()) {
@@ -149,5 +151,5 @@ if (interactive()) {
   cat('Non-interactive mode detected. Skipping save. \n')
 }
 
-nep_qa_list$Pensacola = qa_pensacola
+data_list_qa$Pensacola = qa_pensacola
 

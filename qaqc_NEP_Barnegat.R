@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Mar 14, 2025
+# Last updated: Apr 3, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -12,7 +12,7 @@
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-cat('Processing location: Barnegat Bay \n')
+cat('Processing NEP: Barnegat Bay \n')
 
 ##### Step 1. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
 
@@ -77,7 +77,7 @@ num_flatline_fail = 3
 attenuated_signal_thresholds = list(
   ph = list(min_fail = 0.02, min_sus = 0.05),
   temp.c = list(min_fail = 0.1, min_sus = 0.2),
-  sal.ppt = list(min_fail = 0.8, min_sus = 1.3),
+  sal.ppt = list(min_fail = 0.1, min_sus = 0.3),
   do.mgl = list(min_fail = 0.1, min_sus = 0.3),
   co2.ppm = list(min_fail = 1, min_sus = 2)
 )
@@ -111,7 +111,7 @@ barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1)
 # define variables to be tested:
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 # RUN SCRIPT:
-qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds)
+qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=15, attenuated_signal_thresholds, num_sd_for_rate_of_change)
 
 
 #---------
@@ -153,7 +153,7 @@ if (interactive()) {
   cat('Non-interactive mode detected. Skipping save. \n')
 }
 
-nep_qa_list$Barnegat = qa_barnegat
+data_list_qa$Barnegat = qa_barnegat
 
 
 # # Manual Entry below (COMMENT OUT): 
