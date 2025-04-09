@@ -271,7 +271,7 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
   return(data)
 }
 # ATTENUATED SIGNAL TEST #
-attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, test_time, time_interval = sample_interval) {
+attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, time_window, time_interval = sample_interval) {
   # Tests NEP data for a near-flatline (change relative to a designated suspect and fail threshold ('attenuated_signal_thresholds'))
   #  0 - Test not ran
   #  1 - Pass - exceeds both suspect and fail thresholds for change
