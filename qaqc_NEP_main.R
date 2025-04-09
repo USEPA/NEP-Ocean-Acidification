@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Apr 4, 2025
+# Last updated: Apr 9, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    This R script performs the following: 
@@ -94,7 +94,19 @@ spike_test = function(site_data, vars_to_test, spike_thresholds) {
   return(data)
 }
 # FLATLINE TEST #
-flatline_test = function(site_data, vars_to_test) {
+get_flatline_lengths = function(x) {
+  # function which looks at a list of values and returns a list of how many times each value has been repeated
+  # e.g. if x = c(1,2,2,5,5,5) this would return: c(1,1,2,1,2,3)
+  n = length(x)
+  flatline_lengths = rep(1,n) # create a list of 1's, equal in length to the list 'x'
+  for (i in 2:n) {
+    if (!is.na(x[i]) && !is.na(x[i-1]) && x[i] == x[i-1]) { # if the value is equal to the previous value: add 1 to the i'th flatline tracker
+      flatline_lengths[i] = flatline_lengths[i-1]+1
+    }
+  }
+  return(flatline_lengths)
+}
+flatline_test = function(site_data, vars_to_test, num_flatline_sus, num_flatline_fail) {
   # Tests NEP data for consecutive unchanging values
   #  0 - Test not ran
   #  0.5 - Insufficient data (not enough previous entries)
@@ -102,22 +114,35 @@ flatline_test = function(site_data, vars_to_test) {
   #  2 - Suspect - 3 or 4 equal repeated values
   #  3 - Fail - 5+ equal repeated values 
   # - - - - - - - - - - - - - - - - - -
-  SUS_NUM = num_flatline_sus
-  FAIL_NUM = num_flatline_fail
+  SUS_NUM = num_flatline_sus 
+  FAIL_NUM = num_flatline_fail 
   data = site_data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.Flatline_{.col}'))
-  # Apply test logic
-  data = data |> 
-    mutate(across(all_of(vars_to_test), ~ {
-      rle_vals = rle(.x) # get run-length encoding for the variable
-      run_lengths = rep(rle_vals$lengths, rle_vals$lengths) # expand lengths to match row positions
-      case_when(
-        row_number() < FAIL_NUM ~ 0.5, # Insufficient Data
-        !is.na(.x) & run_lengths >= FAIL_NUM ~ 3, # FAIL
-        !is.na(.x) & run_lengths >= SUS_NUM ~ 2, # SUSPECT
-        TRUE ~ 1                                # PASS
-      )
-    }, .names = 'test.Flatline_{.col}'))
+  # Apply NEW test logic:
+  for (var in vars_to_test) {
+    col = data[[var]]
+    flatline_lengths = get_flatline_lengths(col)
+    flag_col = case_when(
+      row_number(data) < 5 ~ 0.5, # INSUFFICIENT DATA
+      is.na(col) ~ 0,                   # TEST NOT RAN
+      flatline_lengths >= FAIL_NUM ~ 3, # FAIL
+      flatline_lengths >= SUS_NUM ~ 2, # SUSPECT
+      TRUE ~ 1                         # PASS
+    )
+    data[[paste0('test.Flatline_',var)]] = flag_col
+  }
+  # Apply OLD test logic
+  # data = data |> 
+  #   mutate(across(all_of(vars_to_test), ~ {
+  #     rle_vals = rle(.x) # get run-length encoding for the variable
+  #     run_lengths = rep(rle_vals$lengths, rle_vals$lengths) # expand lengths to match row positions
+  #     case_when(
+  #       row_number() < FAIL_NUM ~ 0.5, # Insufficient Data
+  #       !is.na(.x) & run_lengths >= FAIL_NUM ~ 3, # FAIL
+  #       !is.na(.x) & run_lengths >= SUS_NUM ~ 2, # SUSPECT
+  #       TRUE ~ 1                                # PASS
+  #     )
+  #   }, .names = 'test.Flatline_{.col}'))
   # create overall test.Flatline column
   data = data |> 
     mutate(test.Flatline = do.call(pmax, c(select(data, starts_with('test.Flatline_')), na.rm=TRUE)))
@@ -308,7 +333,8 @@ attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_si
 # _________________________________________________________ #
 ### NEW QAQC Function (calls individual test functions)####
 # _________________________________________________________ #
-qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval, attenuated_signal_thresholds, num_sd_for_rate_change) {
+qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, 
+                    time_interval, attenuated_signal_thresholds, num_sd_for_rate_change, num_flatline_sus, num_flatline_fail) {
 # METADATA: ####
 # Applies QARTOD testing across a single data-frame, assuming all data within the data-frame corresponds to a single NEP
 # Assumed column names:
@@ -343,7 +369,7 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
     # spike:
     site_data = spike_test(site_data, vars_to_test, spike_thresholds)
     # flat line:
-    site_data = flatline_test(site_data, vars_to_test)
+    site_data = flatline_test(site_data, vars_to_test, num_flatline_sus, num_flatline_fail)
     # climatology:
     site_data = climatology_test(site_data, vars_to_test, seasonal_thresholds)
     # rate of change:

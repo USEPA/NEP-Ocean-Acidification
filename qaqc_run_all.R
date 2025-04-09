@@ -45,7 +45,7 @@ setwd(local_R_path)
 save_Odrive_option = readline(prompt='Save QAd NEP Data for each NEP to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
 save_local_option = readline(prompt='Save QAd NEP Data for each NEP locally (to where you setwd() to in lines 39-40)? (y/n): ')
 
-data_list_qa = data_list
+qa_data_list = data_list
 
 # Begin QA Process:
 cat('Starting QA Process... Loading main QA .R script... \n')
