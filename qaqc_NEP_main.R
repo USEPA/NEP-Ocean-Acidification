@@ -102,8 +102,8 @@ flatline_test = function(site_data, vars_to_test) {
   #  2 - Suspect - 3 or 4 equal repeated values
   #  3 - Fail - 5+ equal repeated values 
   # - - - - - - - - - - - - - - - - - -
-  SUS_NUM = 12
-  FAIL_NUM = 36
+  SUS_NUM = num_flatline_sus
+  FAIL_NUM = num_flatline_fail
   data = site_data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.Flatline_{.col}'))
   # Apply test logic
@@ -246,7 +246,7 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
   return(data)
 }
 # ATTENUATED SIGNAL TEST #
-attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, test_time, time_interval = 15) {
+attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, test_time, time_interval = sample_interval) {
   # Tests NEP data for a near-flatline (change relative to a designated suspect and fail threshold ('attenuated_signal_thresholds'))
   #  0 - Test not ran
   #  1 - Pass - exceeds both suspect and fail thresholds for change
@@ -254,7 +254,8 @@ attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_si
   #  3 - Fail - does not exceed fail threshold
   # - - - - - - - - - - - - - - - - - -
   # define number of rows to assess min and max values across
-  num_rows = (test_time * 60 / time_interval)
+  #num_rows = (test_time * 60 / time_interval)
+  num_rows = time_window/time_interval
   # define safe_min and safe_max functions to calculate min and max values across num_rows without creating -Inf 
   safe_max = function(x) if (all(is.na(x))) NA else max(x, na.rm=TRUE)
   safe_min = function(x) if (all(is.na(x))) NA else min(x, na.rm=TRUE)
