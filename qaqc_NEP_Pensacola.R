@@ -66,13 +66,12 @@ seasonal_thresholds = list(
   co2.ppm_max = list(DJF = 2000, MAM = 2000, JJA = 2000, SON = 2000)
 )
 # For Rate-of-Change Test:
-num_sd_for_rate_of_change = 3 
-time_window = 24*60*60  # (default = 24-hours in seconds)
+num_sd_for_rate_of_change = 4
 min_num_pts_rate_of_change = 3
-sample_interval = 15 # minutes
+sample_interval = 10 # minutes
 # For Flatline Test:
-num_flatline_sus = 36
-num_flatline_fail = 72
+num_flatline_sus = 15
+num_flatline_fail = 30
 # For Attenuated Signal Test:
 # these values dictate the exceedence thresholds to which the difference min(var) and max(var) over a given 12-hour period would FAIL or be SUSPECT if they do not exceed them 
 # similar to a flat-line test, it tests for near-flat-line scenarios, where a signal is overly dampened by an external factor
@@ -83,6 +82,7 @@ attenuated_signal_thresholds = list(
   do.mgl = list(min_fail = 0.01, min_sus = 0.1),
   co2.ppm = list(min_fail = 1, min_sus = 10)
 )
+time_window = 24 # Time (in hours) to look back across to compare the signal against # (default = 24-hours)
 # Threshold lists 
 user_thresholds = list(
   ph = list(min=ph_user_min, max=ph_user_max),
@@ -105,8 +105,7 @@ spike_thresholds = list(
   do.mgl = list(low=spike_low_do, high=spike_high_do),
   co2.ppm = list(low=spike_low_co2, high=spike_high_co2)
 )
-# Rate Change test:
-num_sd_for_rate_of_change = 4
+
 # END PARAMETERIZATION #
 
 #### Step 2. Run QA Script: ####
@@ -114,49 +113,32 @@ num_sd_for_rate_of_change = 4
 # Pensacola - do you have thresholds for Pensacola entered?
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
 # Run QA Script:
-qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_interval=10, attenuated_signal_thresholds, num_sd_for_rate_of_change, num_flatline_sus, num_flatline_fail)
+qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_window, 
+                        time_interval=sample_interval, attenuated_signal_thresholds, num_sd_for_rate_of_change, num_flatline_sus, num_flatline_fail)
 
-#### Step 3: Saving Options ####
-# if (interactive()) {
-#   # save_all_option = 'n'
-#   # dataframe_option = readline(prompt = 'Add QAd Pensacola Data to qa_data_list? (y/n): ')
-#   # if (tolower(dataframe_option) %in% c('y','yes')) {
-#   #   qa_data_list$Pensacola = qa_pensacola
-#   #   cat('QAd Pensacola Data successfully saved to qa_data_list$Pensacola in current R Environment')
-#   #   save_all_option = readline(prompt = 'Overwrite previous qa_data_list to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
-#   # }
-#   # 
-#   # if (tolower(save_all_option) %in% c('y','yes')) {
-#   #   save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_data_list.Rdata'
-#   #   cat('Saving qa_data_list to:',save_path,'\n')
-#   #   save(qa_data_list, file = save_path)
-#   #   cat('qa_data_list saved successfully to O:drive')
-#   # } 
-#   
-#   # save_nep_option = readline(prompt = 'Save QAd Pensacola Data on its own to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
-#   if (tolower(save_Odrive_option) %in% c('y','yes')) {
-#     save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_pensacola.Rdata'
-#     cat('Saving qa_pensacola to:',save_path,'\n')
-#     save(qa_pensacola, file=save_path)
-#     cat('qa_pensacola saved successfully to O:drive. \n')
-#   } else {
-#     cat('Skipped.')
-#   }
-#   # save_local_option = readline(prompt = 'Save QAd Pensacola Data to current directory? (y/n): ')
-#   if (tolower(save_local_option) %in% c('y','yes')) {
-#     save_path = getwd()
-#     cat('Saving Pensacola data locally to current directory \n')
-#     save(qa_pensacola, file = paste0(getwd(),'qa_pensacola.Rdata'))
-#     cat('qa_pensacola saved locally. \n')
-#   }
-# } else {
-#   cat('Non-interactive mode detected. Skipping save. \n')
-# }
-# 
-# data_list_qa$Pensacola = qa_pensacola
-qa_pensacola$flags <- 5
+### CREATE 'flags' column to take the maximum (worst) flag across the row:
+qa_pensacola = qa_pensacola |> 
+  mutate(flags = do.call(pmax, c(select(qa_pensacola, starts_with('test.')), na.rm=TRUE)))
 
-for (i in 1:length(qa_pensacola$DATE)) {
-  flag_temp <- max(qa_pensacola[i,26:55])
-  qa_pensacola$flags[i] <- flag_temp
+qa_data_list$Pensacola = qa_pensacola
+#-------------
+
+### Step 3: Saving Options ####
+if (interactive()) {
+  if (tolower(save_Odrive_option) %in% c('y','yes')) {
+    save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_pensacola.Rdata'
+    cat('Saving qa_pensacola to:',save_path,'\n')
+    save(qa_pensacola, file=save_path)
+    cat('qa_pensacola saved successfully to O:drive. \n')
+  } else {
+    cat('Skipped saving to O:drive. \n')
+  }
+  if (tolower(save_local_option) %in% c('y','yes')) {
+    save_path = getwd()
+    cat('Saving Pensacola data locally to current directory \n')
+    save(qa_pensacola, file = paste0(getwd(),'qa_pensacola.Rdata'))
+    cat('qa_pensacola saved locally. \n')
+  }
+} else {
+  cat('Skipped saving locally. \n')
 }

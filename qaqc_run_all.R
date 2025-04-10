@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Mar 5, 2025
-# Last updated: Apr 4, 2025
+# Last updated: Apr 10, 2025
 # -------------------------------------------------------------------------------
 # From this script, the user may run the entire QA-QC process for each NEP included here which has a file within the same directory
 #
@@ -31,9 +31,21 @@
 # --------------------------------------------------
 start_time = Sys.time()
 cat('Beginning script... \n Loading data from O:drive...\n')
-# #### Load in data (data_list) a list of data frames for each NEP, with harmonized column names
+#### USER PROMPTS:
+# Prompt to determine if data needs to be loaded in:
 data_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/'
-load(paste0(data_path,'data_list.Rdata'))
+load_data_option = readline(prompt='Load in Data (data_list) from O:Drive? (y/n). Respond y if data is not yet loaded in, or if using an older version of data_list: ')
+if (interactive()) {
+  if (tolower(load_data_option) %in% c('y','yes')) {
+    load(paste0(data_path,'data_list.Rdata'))
+  }
+}
+# Prompts to determine if saving locally / O:drive
+save_Odrive_option = readline(prompt='Save QAd NEP Data for each NEP to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
+save_local_option = readline(prompt='Save QAd NEP Data for each NEP locally (to where you setwd() to in lines 39-40)? (y/n): ')
+
+# Prompt to ask user if they want printed progress statements throughout the process:
+progress_print_option = readline(prompt='Would you like timestamped progress statements in R Console through the process for troubleshooting? (y/n): ')
 
 #
 # Set local path to location of folder with saved scripts (including this one)
@@ -41,10 +53,7 @@ local_R_path = 'C:/Users/amandovi/OneDrive - Environmental Protection Agency (EP
 setwd(local_R_path)
 # # # # # # 
 
-# Prompts - determine saving locally / O:drive
-save_Odrive_option = readline(prompt='Save QAd NEP Data for each NEP to O:drive (O:/.../NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/) as .Rdata? (y/n): ')
-save_local_option = readline(prompt='Save QAd NEP Data for each NEP locally (to where you setwd() to in lines 39-40)? (y/n): ')
-
+# create initial qa_data_list from data_list - will be added with QA'd NEP data (flags added, no filtering)
 qa_data_list = data_list
 
 # Begin QA Process:

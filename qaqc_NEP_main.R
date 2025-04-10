@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Apr 9, 2025
+# Last updated: Apr 10, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    This R script performs the following: 
@@ -118,8 +118,11 @@ flatline_test = function(site_data, vars_to_test, num_flatline_sus, num_flatline
   FAIL_NUM = num_flatline_fail 
   data = site_data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.Flatline_{.col}'))
-  # Apply NEW test logic:
+  # Apply test logic:
   for (var in vars_to_test) {
+    if (tolower(progress_print_option) %in% c('y','yes')) {
+      print(paste('Processing flatline for:',var,'at',Sys.time()))
+    }
     col = data[[var]]
     flatline_lengths = get_flatline_lengths(col)
     flag_col = case_when(
@@ -131,18 +134,6 @@ flatline_test = function(site_data, vars_to_test, num_flatline_sus, num_flatline
     )
     data[[paste0('test.Flatline_',var)]] = flag_col
   }
-  # Apply OLD test logic
-  # data = data |> 
-  #   mutate(across(all_of(vars_to_test), ~ {
-  #     rle_vals = rle(.x) # get run-length encoding for the variable
-  #     run_lengths = rep(rle_vals$lengths, rle_vals$lengths) # expand lengths to match row positions
-  #     case_when(
-  #       row_number() < FAIL_NUM ~ 0.5, # Insufficient Data
-  #       !is.na(.x) & run_lengths >= FAIL_NUM ~ 3, # FAIL
-  #       !is.na(.x) & run_lengths >= SUS_NUM ~ 2, # SUSPECT
-  #       TRUE ~ 1                                # PASS
-  #     )
-  #   }, .names = 'test.Flatline_{.col}'))
   # create overall test.Flatline column
   data = data |> 
     mutate(test.Flatline = do.call(pmax, c(select(data, starts_with('test.Flatline_')), na.rm=TRUE)))
@@ -164,6 +155,9 @@ climatology_test = function(site_data, vars_to_test, seasonal_thresholds) {
     mutate(across(all_of(vars_to_test), ~ 0, .names='test.Climatology_{.col}'))
   # create and fill seasonal min/max columns:
   for (var in vars_to_test) {
+    if (tolower(progress_print_option) %in% c('y','yes')) {
+      print(paste('Processing climatology for:',var,'at',Sys.time()))
+    }
     min_col = paste0(var, '_season_min')
     max_col = paste0(var, '_season_max')
     
@@ -203,8 +197,8 @@ climatology_test = function(site_data, vars_to_test, seasonal_thresholds) {
   return(finished_data)
 }
 # RATE OF CHANGE TEST: 3 functions #
-# Function 1: interpolating data (into new data frame) to account for any missing timestamps - empty data is NA
-interpolate_data = function(data, vars_to_test, time_interval) {
+# Rate of Change Function 1: interpolating data (into new data frame) to account for any missing timestamps - empty data is NA
+interpolate_data = function(data, vars_to_test, time_interval=sample_interval) {
   # ensure datetime.utc is in POSIXct format
   sorted_data = data |> 
     drop_na(datetime.utc) # remove NA datetime values
@@ -223,9 +217,10 @@ interpolate_data = function(data, vars_to_test, time_interval) {
   }
   return(data_interp)
 }
-# Function 2: calculate rolling standard deviation and add to main data frame
-calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_na = 20) {
-  sampling_window = (60/time_interval)*24 # 96 for 15-min data
+
+# Rate of Change Function 2: calculate rolling standard deviation and add to main data frame
+calc_rolling_sd = function(data_interp, vars_to_test, time_interval=sample_interval, min_non_na = 20) {
+  sampling_window = (60/time_interval)*24 # num of rows per 24-hours
   for (var in vars_to_test) {
     if (var %in% names(data_interp)) {
       sd_col_name = paste0('sd_',var)
@@ -242,7 +237,8 @@ calc_rolling_sd = function(data_interp, vars_to_test, time_interval=15, min_non_
   }
   return(data_interp)
 }
-# Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
+
+# Rate of Change Function 3: perform rate-of-change test on primary data based on SD values in interpolated data
 rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_change = 3) {
   # Tests NEP data for a value spike relative to standard deviation of previous time period (24 hours)
   #  0 - Test not ran
@@ -254,6 +250,9 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
   data = data |> 
     mutate(across(all_of(vars_to_test), ~ 0, .names = 'test.RateChange_{.col}'))
   for (var in vars_to_test) {
+    if (tolower(progress_print_option) %in% c('y','yes')) {
+      print(paste('Processing rate change for:',var,'at',Sys.time()))
+    }
     # dynamically match rolling SD values from data_interp:
     matched_sd_values = data_interp[[paste0('sd_',var)]][match(data$datetime.utc,data_interp$datetime.utc)]
     # apply rate of change test:
@@ -273,14 +272,20 @@ rate_change_test = function(data, data_interp, vars_to_test, num_sd_for_rate_cha
 # ATTENUATED SIGNAL TEST #
 attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_signal_thresholds, time_window, time_interval = sample_interval) {
   # Tests NEP data for a near-flatline (change relative to a designated suspect and fail threshold ('attenuated_signal_thresholds'))
+  # time_window: how far back (in hours, default = 24 hours) you want to assess the min/max range of values for the test
+  # time_interval: the MINIMUM interval (in minutes, default = 15 min) between measurements in the dataset
+  #    --> NOTE: Even if 90% of the dataset is a 15-min interval, if 10% is a 5-min interval, choose 5 minutes. This function will
+  #              interpolate the data time-series and remove any rows that didn't take measurements. This ensures full data inclusion
+  # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  # Test flags:
   #  0 - Test not ran
   #  1 - Pass - exceeds both suspect and fail thresholds for change
   #  2 - Suspect - exceeds fail threshold but does not exceed suspect threshold
   #  3 - Fail - does not exceed fail threshold
-  # - - - - - - - - - - - - - - - - - -
+  # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   # define number of rows to assess min and max values across
   #num_rows = (test_time * 60 / time_interval)
-  num_rows = time_window/time_interval
+  num_rows = time_window*60/time_interval # rows to sample backwards across for test
   # define safe_min and safe_max functions to calculate min and max values across num_rows without creating -Inf 
   safe_max = function(x) if (all(is.na(x))) NA else max(x, na.rm=TRUE)
   safe_min = function(x) if (all(is.na(x))) NA else min(x, na.rm=TRUE)
@@ -290,27 +295,19 @@ attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_si
   for (var in vars_to_test) {
     fail_threshold = attenuated_signal_thresholds[[var]]$min_fail
     suspect_threshold = attenuated_signal_thresholds[[var]]$min_sus
-    print(paste('Processing variable:',var))
-    # print(fail_threshold)
-    # print(suspect_threshold)
+    if (tolower(progress_print_option) %in% c('y','yes')) {
+      print(paste('Processing attenuated signal for:',var,'at',Sys.time()))
+    }
     # debug: ensure there are valid values
     if (all(is.na(data_interp[[var]]))) {
       warning(paste('All values of',var,'are NA in data_interp. Skipping.'))
       next # skip this variable if all values are NA
     }
     
-    # compute rolling max-min difference over test_time window:
+    # compute rolling max-min difference over time_window:
     data_interp = data_interp |> 
       mutate(!!paste0(var,'_max') := rollapply(get(var), width=num_rows, FUN=safe_max, fill=NA, align='right'),
              !!paste0(var,'_min') := rollapply(get(var), width=num_rows, FUN=safe_min, fill=NA, align='right'))
-    # mutate(!!paste0(var,'_max') := ifelse(
-    #         is.infinite(rollapply(get(var), width = num_rows, FUN = max, fill = NA, align = 'right', na.rm=TRUE)),
-    #         NA, rollapply(get(var), width = num_rows, FUN = max, fill = NA, align='right', na.rm=TRUE)
-    #         ),
-    #        !!paste0(var,'_min') := ifelse(
-    #          is.infinite(rollapply(get(var), width = num_rows, FUN = min, fill = NA, align = 'right', na.rm=TRUE)),
-    #          NA, rollapply(get(var), width = num_rows, FUN = min, fill = NA, align = 'right', na.rm=TRUE)
-    #        ))
     # match min and max values from data_interp to data based on datetime.utc
     max_col_values = data_interp[[paste0(var,'_max')]][match(data$datetime.utc, data_interp$datetime.utc)]
     min_col_values = data_interp[[paste0(var,'_min')]][match(data$datetime.utc, data_interp$datetime.utc)]
@@ -331,9 +328,9 @@ attenuated_signal_test = function(data, data_interp, vars_to_test, attenuated_si
 
 
 # _________________________________________________________ #
-### NEW QAQC Function (calls individual test functions)####
+### QAQC Function (calls individual test functions)####
 # _________________________________________________________ #
-qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, 
+qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_window,
                     time_interval, attenuated_signal_thresholds, num_sd_for_rate_change, num_flatline_sus, num_flatline_fail) {
 # METADATA: ####
 # Applies QARTOD testing across a single data-frame, assuming all data within the data-frame corresponds to a single NEP
@@ -377,7 +374,7 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
     data_interp = calc_rolling_sd(site_data_interp, vars_to_test,time_interval, min_non_na = 20)
     site_data = rate_change_test(site_data, data_interp, vars_to_test, num_sd_for_rate_change)
     # attenuated signal:
-    site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, 12)
+    site_data = attenuated_signal_test(site_data, data_interp, vars_to_test, attenuated_signal_thresholds, time_window, time_interval)
     
     results_list[[i]] = site_data
   }
@@ -401,4 +398,3 @@ convert_ph_NBS_to_Total = function(data) {
   return(data) 
 }
 
-nep_qa_list = list()
