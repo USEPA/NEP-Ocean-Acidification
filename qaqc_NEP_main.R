@@ -353,6 +353,8 @@ qaqc_nep = function(data, columns_to_qa, user_thresholds, sensor_thresholds, spi
   if (is.character(data$datetime.utc)) {
     data$datetime.utc = as.POSIXct(data$datetime.utc, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')
   }
+  data = data %>% 
+    arrange(datetime.utc)
   site_list = data |> 
     group_split(site.code)
   results_list = list()

@@ -73,6 +73,9 @@ cat('Casco Bay QA process complete. \n')
 source('qaqc_NEP_Pensacola.R')
 cat('Pensacola Bay QA process complete. \n')
 
+source('qaqc_NEP_Delaware.R')
+cat('Delaware Inland Bays QA process complete. \n')
+
 end_time = Sys.time()
 time_taken = end_time - start_time
 cat('*~*~* All QA Processes completed! ^_^ *~*~* \n Completion time:',round(time_taken,1),'min. \n')

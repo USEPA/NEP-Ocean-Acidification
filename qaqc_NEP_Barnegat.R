@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Apr 10, 2025
+# Last updated: Apr 17, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -41,17 +41,7 @@ co2_sensor_min = 0
 co2_sensor_max = 3500
 do_sensor_min = 0
 do_sensor_max = 25
-# for Spike Test:
-spike_low_ph = 1
-spike_high_ph = 2
-spike_low_temp = 3
-spike_high_temp = 5
-spike_low_sal = 10
-spike_high_sal = 20
-spike_low_do = 5
-spike_high_do = 10
-spike_low_co2 = 200
-spike_high_co2 = 400
+
 # Seasonal thresholds for climatology test:
 seasonal_thresholds = list(
   ph_min = list(DJF = 6, MAM = 6, JJA = 6, SON = 6),
@@ -112,6 +102,7 @@ spike_thresholds = list(
 barnegat_filtered = subset(data_list$Barnegat, sensor.YSI == 1)
 # define variables to be tested:
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
+
 # RUN SCRIPT:
 qa_barnegat = qaqc_nep(barnegat_filtered, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_window,
                        time_interval=sample_interval, attenuated_signal_thresholds, num_sd_for_rate_of_change, num_flatline_sus, num_flatline_fail)

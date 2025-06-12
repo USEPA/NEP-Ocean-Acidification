@@ -12,8 +12,9 @@
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# create initial 'pass_data_list' copy from 'data_list'
-pass_data_list = data_list
+#!! create initial 'pass_data_list' copy from 'data_list'
+#!! pass_data_list = data_list
+#!! pass_data_list = qa_data_list
 
 ## Create cutoff date to filter data_list with, for 2015-present
 cutoff_date = as.POSIXct('2014-12-31 23:59:59',format='%Y-%m-%d %H:%M:%S', tz='UTC')
@@ -21,13 +22,11 @@ cutoff_date = as.POSIXct('2014-12-31 23:59:59',format='%Y-%m-%d %H:%M:%S', tz='U
 #####  NEP Filters:  ####
 # Barnegat
 barnegat = qa_barnegat |> 
-  arrange(datetime.utc) |> 
-  select(-starts_with('test.Climatology')) 
-
+  arrange(datetime.utc) 
 # re-make 'flags' column with test.Climatology columns removed:
-# !!! REMOVE IF CLIMATOLOGY TEST IMPLEMENTED
-barnegat = barnegat |> 
-  mutate(flags = do.call(pmax, c(select(barnegat, starts_with('test.')), na.rm=TRUE)))   
+# barnegat = barnegat %>% 
+#   select(-starts_with('test.Climatology')) %>% 
+#   mutate(flags = do.call(pmax, c(select(barnegat, starts_with('test.')), na.rm=TRUE)))   
 
 barnegat = barnegat |> 
   mutate(ph_flag = do.call(pmax, c(select(barnegat, ends_with('_ph')),na.rm=TRUE)),
@@ -35,19 +34,19 @@ barnegat = barnegat |>
          temp_flag = do.call(pmax,c(select(barnegat, ends_with('_temp.c')),na.rm=TRUE)),
          sal_flag = do.call(pmax,c(select(barnegat, ends_with('_sal.ppt')),na.rm=TRUE))
   ) 
-pass_data_list$Barnegat = barnegat |>
-  filter(datetime.utc > cutoff_date & flags == 1)
 qa_data_list$Barnegat = barnegat 
+pass_data_list$Barnegat = qa_data_list$Barnegat |>
+  filter(datetime.utc > cutoff_date & flags == 1)
+
 
 # Casco
 casco = qa_casco  |> 
-  arrange(datetime.utc) |> 
-  select(-starts_with('test.Climatology')) 
-
+  arrange(datetime.utc) 
+  
 # re-make 'flags' column with test.Climatology columns removed:      
-# !!! REMOVE IF CLIMATOLOGY TEST IMPLEMENTED
-casco = casco |> 
-  mutate(flags = do.call(pmax, c(select(casco, starts_with('test.')), na.rm=TRUE)))   
+# casco = casco %>% 
+  # select(-starts_with('test.Climatology')) %>% 
+  # mutate(flags = do.call(pmax, c(select(casco, starts_with('test.')), na.rm=TRUE)))   
 casco = casco |> 
   mutate(ph_flag = do.call(pmax, c(select(casco, ends_with('_ph')),na.rm=TRUE)),
          do_flag = do.call(pmax, c(select(casco, ends_with('_do.mgl')),na.rm=TRUE)),
@@ -60,19 +59,23 @@ pass_data_list$Cascobay = casco |>
 qa_data_list$Cascobay = casco  
 
 # Coastal Bend
+qa_data_list$Coastalbend = qa_data_list$Coastalbend %>% 
+  mutate(flags = do.call(pmax, c(select(qa_data_list$Coastalbend, c('PH_FLAG','SAL_FLAG','CO2_FLAG','TEMP_FLAG')), na.rm=TRUE)))
+
+
 pass_data_list$Coastalbend = data_list$Coastalbend |> 
   arrange(datetime.utc) |> 
   filter(datetime.utc > cutoff_date 
          & PH_FLAG == 1 
          & SAL_FLAG == 1
-         & co2.ppm.flag == 1
+         & CO2_FLAG == 1
          & TEMP_FLAG == 1
   )
 
 # Delaware Inland Bays
 pass_data_list$DelawareInland = data_list$DelawareInland |> 
   arrange(datetime.utc) |> 
-  filter(datetime.utc > cutoff_date & is.na(ph_flag))
+  filter(datetime.utc > cutoff_date & flags == 1)
 
 # Indian River Lagoon
 pass_data_list$IndianRiverLagoon = data_list$IndianRiverLagoon |> 
@@ -84,6 +87,10 @@ pass_data_list$IndianRiverLagoon = data_list$IndianRiverLagoon |>
   filter(DO_FLAG == 'good' | DO_FLAG == '') |> 
   filter(CO2_FLAG == 'good' | CO2_FLAG == '') |> 
   filter(ph.T >= 5.5 & ph.T <= 9.5)
+
+ggplot()+
+  geom_point(data=data_list$IndianRiverLagoon, aes(x=datetime.utc,y=ph.T), alpha=0.3, size=1, color='red')+
+  geom_point(data=pass_data_list$IndianRiverLagoon, aes(x=datetime.utc, y=ph.T),alpha=0.3, size=1, color='black')
 
 # Long Island Sound
 pass_data_list$LongIslandSound = data_list$LongIslandSound |> 
@@ -128,13 +135,13 @@ pass_data_list$NYNJH = data_list$NYNJH |>
 
 # Pensacola
 pensacola = qa_pensacola |> 
-  arrange(datetime.utc) |> 
-  select(-starts_with('test.Climatology'))
+  arrange(datetime.utc) 
+  
 
 # re-make 'flags' column with test.Climatology columns removed:      
-# !!! REMOVE IF CLIMATOLOGY TEST IMPLEMENTED
-pensacola = pensacola |> 
-  mutate(flags = do.call(pmax, c(select(pensacola, starts_with('test.')), na.rm=TRUE)))   
+# pensacola = pensacola %>% 
+  # select(-starts_with('test.Climatology')) %>% 
+  # mutate(flags = do.call(pmax, c(select(pensacola, starts_with('test.')), na.rm=TRUE)))   
 
 pensacola = pensacola |> 
   mutate(ph_flag = do.call(pmax, c(select(pensacola, ends_with('_ph')),na.rm=TRUE)),
@@ -161,7 +168,7 @@ pass_data_list$SanFrancisco = data_list$SanFrancisco |>
   filter(datetime.utc > cutoff_date
          & ph.tot.qc == 1
          & do.mgl.qc == 1 
-         & PRES_QC == 1
+         # & PRES_QC == 1
          & sal.ppt.qc == 1
          & temp.c.qc == 1)
 
@@ -183,5 +190,17 @@ pass_data_list$Tillamook = data_list$Tillamook |>
   filter(flags_seaphox == 1 | is.na(flags_seaphox)) |> 
   filter(flags_ysi == 1 | is.na(flags_ysi)) |> 
   filter(flags_samico2 == 1 | is.na(flags_samico2))
+
+
+##### Creating Pass Data List: filtering for passing flags & cutoff date:
+# create initial pass_data_list off copy of qa_data_list
+pass_data_list = qa_data_list 
+# apply filters for each NEP:
+pass_data_list$Barnegat = qa_data_list$Barnegat %>% 
+  filter(datetime.utc > cutoff_date & flags == 1)
+pass_data_list$Cascobay = qa_data_list$Cascobay %>% 
+  filter(datetime.utc > cutoff_date & flags == 1)
+pass_data_list$Coastalbend = qa_data_list$Coastalbend %>% 
+  filter(datetime.utc > cutoff_date & flags == 1)
 
 

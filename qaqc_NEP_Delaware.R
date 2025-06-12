@@ -1,46 +1,47 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
-# Originally created: Jan 23, 2025
-# Last updated: Apr 17, 2025
+# Originally created: June 9, 2025
+# Last updated: June 9, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-#                    INSTRUCTIONS FOR USER: 
+#                     What this Script Does: 
 #                    ----------------------
-#  1. Define parameters and thresholds unique to PENSACOLA BAY before running 
-#  2. Runs qaqc script for PENSACOLA BAY
-#  3. Save the results (optional)
+#  1. Defines parameters and thresholds unique to Delaware Inland Bays before running 
+#  2. Runs qaqc script for DELAWARE INLAND BAYS
+#  3. Saves the results (optional)
+#  *. This Script can be called from the qaqc_run_all.R script
 # 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-cat('Processing NEP: Pensacola Bay \n')
+cat('Processing NEP: Delaware Inland Bay \n')
 
-##### Step 3. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
+##### Step 1. PARAMETERIZATION: Edit these prior to running, customized for the specific NEP site/region: ####
 
 # DATE OF LAST UPDATE: ____ 
 # Updated by: ____ 
 
 # For Gross-Range Test:
-ph_user_min = 6
-ph_user_max = 9
-temp_user_min = -1
+ph_user_min = 7
+ph_user_max = 10
+temp_user_min = 10
 temp_user_max = 35
-sal_user_min = 0
-sal_user_max = 36
+sal_user_min = 1
+sal_user_max = 30
 co2_user_min = 100
 co2_user_max = 2500
 do_user_min = 0
-do_user_max = 15
+do_user_max = 30
 # sensor min/max's
 ph_sensor_min = 0
 ph_sensor_max = 14
 temp_sensor_min = -10
 temp_sensor_max = 45
-sal_sensor_min = -1
+sal_sensor_min = -0.001
 sal_sensor_max = 50
 co2_sensor_min = 0
 co2_sensor_max = 3500
 do_sensor_min = 0
-do_sensor_max = 25
+do_sensor_max = 35
 # for Spike Test:
 spike_low_ph = 1
 spike_high_ph = 2
@@ -66,9 +67,9 @@ seasonal_thresholds = list(
   co2.ppm_max = list(DJF = 2000, MAM = 2000, JJA = 2000, SON = 2000)
 )
 # For Rate-of-Change Test:
-num_sd_for_rate_of_change = 4
+num_sd_for_rate_of_change = 3 
 min_num_pts_rate_of_change = 3
-sample_interval = 10 # minutes
+sample_interval = 30 # minutes
 # For Flatline Test:
 num_flatline_sus = 15
 num_flatline_fail = 30
@@ -82,7 +83,7 @@ attenuated_signal_thresholds = list(
   do.mgl = list(min_fail = 0.01, min_sus = 0.1),
   co2.ppm = list(min_fail = 1, min_sus = 10)
 )
-time_window = 24 # Time (in hours) to look back across to compare the signal against # (default = 24-hours)
+time_window = 24 # Time (in hours) to look back across to compare the signal against # (default = 24-hours in seconds)
 # Threshold lists 
 user_thresholds = list(
   ph = list(min=ph_user_min, max=ph_user_max),
@@ -105,39 +106,50 @@ spike_thresholds = list(
   do.mgl = list(low=spike_low_do, high=spike_high_do),
   co2.ppm = list(low=spike_low_co2, high=spike_high_co2)
 )
-
 # END PARAMETERIZATION #
 
-#### Step 2. Run QA Script: ####
+#### Step 2: Running QA script for Delaware Inland Bays: ####
 
-# Pensacola - do you have thresholds for Pensacola entered?
 vars_to_test = c('ph','temp.c','sal.ppt','do.mgl')
-# Run QA Script:
-qa_pensacola = qaqc_nep(data_list$Pensacola, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_window, 
-                        time_interval=sample_interval, attenuated_signal_thresholds, num_sd_for_rate_of_change, num_flatline_sus, num_flatline_fail)
+# RUN SCRIPT:
+gonski = data_list$DelawareInland[site.code == 'USCG']
+Delaware_noGonski = data_list$DelawareInland[site.code != 'USCG']
+
+qa_delaware = qaqc_nep(Delaware_noGonski, vars_to_test, user_thresholds, sensor_thresholds, spike_thresholds, seasonal_thresholds, time_window,
+                       time_interval=sample_interval, attenuated_signal_thresholds, num_sd_for_rate_of_change, num_flatline_sus, num_flatline_fail)
 
 ### CREATE 'flags' column to take the maximum (worst) flag across the row:
-qa_pensacola = qa_pensacola |> 
-  mutate(flags = do.call(pmax, c(select(qa_pensacola, starts_with('test.')), na.rm=TRUE)))
+qa_delaware = qa_delaware |> 
+  mutate(flags = do.call(pmax, c(select(qa_delaware, starts_with('test.')), na.rm=TRUE)))
+# Create 'flags' column in Gonski data too
+gonski = gonski %>% 
+  mutate(flags = case_when(
+    ph_flag == 'mf' ~ 3,
+    TRUE ~ 1
+  ))
 
-qa_data_list$Pensacola = qa_pensacola
-#-------------
+# Combine just-now-QA/QC'd delaware data with data which had previously been QA/QC'd:
+delaware_combined = rbind(gonski,qa_delaware, fill=TRUE)
 
-### Step 3: Saving Options ####
+qa_data_list$DelawareInland = delaware_combined
+#---------
+
+#### Step 3: Saving Options ####
+
 if (interactive()) {
   if (tolower(save_Odrive_option) %in% c('y','yes')) {
-    save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_pensacola.Rdata'
-    cat('Saving qa_pensacola to:',save_path,'\n')
-    save(qa_pensacola, file=save_path)
-    cat('qa_pensacola saved successfully to O:drive. \n')
+    save_path = 'O:/PRIV/CPHEA/PESD/NEW/EPA/PCEB/Acidification Monitoring/NEP Acidification Impacts and WQS/Data/4. Finalized Data from NEPs/qa_delaware.Rdata'
+    cat('Saving qa_delaware to:',save_path,'\n')
+    save(qa_delaware, file=save_path)
+    cat('qa_delaware saved successfully to O:drive. \n')
   } else {
     cat('Skipped saving to O:drive. \n')
   }
   if (tolower(save_local_option) %in% c('y','yes')) {
     save_path = getwd()
-    cat('Saving Pensacola data locally to current directory \n')
-    save(qa_pensacola, file = paste0(getwd(),'qa_pensacola.Rdata'))
-    cat('qa_pensacola saved locally. \n')
+    cat('Saving Delaware data locally to current directory \n')
+    save(qa_delaware, file = paste0(getwd(),'qa_delaware'))
+    cat('qa_delaware saved locally. \n')
   }
 } else {
   cat('Skipped saving locally. \n')
