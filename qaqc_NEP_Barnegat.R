@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: June 12, 2025
+# Last updated: Jun 23, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -41,7 +41,17 @@ co2_sensor_min = 0
 co2_sensor_max = 3500
 do_sensor_min = 0
 do_sensor_max = 25
-
+# for Spike Test:
+spike_low_ph = 1More actions
+spike_high_ph = 2
+spike_low_temp = 3
+spike_high_temp = 5
+spike_low_sal = 10
+spike_high_sal = 20
+spike_low_do = 5
+spike_high_do = 10
+spike_low_co2 = 200
+spike_high_co2 = 400
 # Seasonal thresholds for climatology test:
 seasonal_thresholds = list(
   ph_min = list(DJF = 6, MAM = 6, JJA = 6, SON = 6),
@@ -112,6 +122,12 @@ qa_barnegat = qa_barnegat |>
   mutate(flags = do.call(pmax, c(select(qa_barnegat, starts_with('test.')), na.rm=TRUE)))
 
 qa_data_list$Barnegat = qa_barnegat
+qa_data_list$Barnegat = qa_data_list$Barnegat |> 
+  mutate(ph_flag = do.call(pmax, c(select(qa_data_list$Barnegat, ends_with('_ph')),na.rm=TRUE)),
+         do_flag = do.call(pmax, c(select(qa_data_list$Barnegat, ends_with('_do.mgl')),na.rm=TRUE)),
+         temp_flag = do.call(pmax,c(select(qa_data_list$Barnegat, ends_with('_temp.c')),na.rm=TRUE)),
+         sal_flag = do.call(pmax,c(select(qa_data_list$Barnegat, ends_with('_sal.ppt')),na.rm=TRUE))
+  ) 
 #---------
 
 #### Step 3: Saving Options ####

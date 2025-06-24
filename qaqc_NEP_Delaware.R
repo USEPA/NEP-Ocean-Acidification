@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: June 9, 2025
-# Last updated: June 9, 2025
+# Last updated: June 23, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                     What this Script Does: 
@@ -132,6 +132,12 @@ gonski = gonski %>%
 delaware_combined = rbind(gonski,qa_delaware, fill=TRUE)
 
 qa_data_list$DelawareInland = delaware_combined
+qa_data_list$DelawareInland = qa_data_list$DelawareInland |> 
+  mutate(ph_flag = do.call(pmax, c(select(qa_data_list$DelawareInland, ends_with('_ph')),na.rm=TRUE)),
+         do_flag = do.call(pmax, c(select(qa_data_list$DelawareInland, ends_with('_do.mgl')),na.rm=TRUE)),
+         temp_flag = do.call(pmax,c(select(qa_data_list$DelawareInland, ends_with('_temp.c')),na.rm=TRUE)),
+         sal_flag = do.call(pmax,c(select(qa_data_list$DelawareInland, ends_with('_sal.ppt')),na.rm=TRUE))
+  )
 #---------
 
 #### Step 3: Saving Options ####

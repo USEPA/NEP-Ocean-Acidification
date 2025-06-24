@@ -1,7 +1,7 @@
 # Andrew Mandovi
 # ORISE EPA - Office of Research and Development, Pacific Coastal Ecology Branch, Newport, OR
 # Originally created: Jan 23, 2025
-# Last updated: Apr 17, 2025
+# Last updated: Jun 23, 2025
 
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #                    INSTRUCTIONS FOR USER: 
@@ -120,6 +120,12 @@ qa_casco = qa_casco |>
   mutate(flags = do.call(pmax, c(select(qa_casco, starts_with('test.')), na.rm=TRUE)))
 
 qa_data_list$Cascobay = qa_casco
+qa_data_list$Cascobay = qa_data_list$Cascobay |> 
+  mutate(ph_flag = do.call(pmax, c(select(qa_data_list$Cascobay, ends_with('_ph')),na.rm=TRUE)),
+         do_flag = do.call(pmax, c(select(qa_data_list$Cascobay, ends_with('_do.mgl')),na.rm=TRUE)),
+         temp_flag = do.call(pmax,c(select(qa_data_list$Cascobay, ends_with('_temp.c')),na.rm=TRUE)),
+         sal_flag = do.call(pmax,c(select(qa_data_list$Cascobay, ends_with('_sal.ppt')),na.rm=TRUE))
+  )
 #-------------
 
 #### Step 3: Saving Options ####
