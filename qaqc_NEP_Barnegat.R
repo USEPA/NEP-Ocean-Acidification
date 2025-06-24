@@ -42,7 +42,7 @@ co2_sensor_max = 3500
 do_sensor_min = 0
 do_sensor_max = 25
 # for Spike Test:
-spike_low_ph = 1More actions
+spike_low_ph = 1
 spike_high_ph = 2
 spike_low_temp = 3
 spike_high_temp = 5
