@@ -73,6 +73,7 @@ cat('Casco Bay QA process complete. \n')
 source('qaqc_NEP_Pensacola.R')
 cat('Pensacola Bay QA process complete. \n')
 
+#Delaware:
 source('qaqc_NEP_Delaware.R')
 cat('Delaware Inland Bays QA process complete. \n')
 
